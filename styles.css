@@ -364,26 +364,3 @@ footer {
         transition: none !important;
     }
 }
-
-/* Cartões da versão pública */
-.vendedor {
-    min-width: 0;
-    padding: 22px;
-    background: var(--branco);
-    border: 1px solid var(--borda);
-    border-radius: 16px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.05);
-}
-.vendedor h3 { color: var(--laranja-escuro); margin-top: 0; }
-.vendedor p { overflow-wrap: anywhere; }
-.vendedor a {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    padding: 10px 16px;
-    background: var(--verde);
-    color: white;
-    border-radius: 9px;
-    text-decoration: none;
-}
-[hidden] { display: none !important; }
