@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -8,27 +9,221 @@
     body {
       font-family: Arial, sans-serif;
       background: #fff7ed;
-      text-align: center;
-      padding: 30px 15px;
+      padding: 20px;
+      color: #292524;
     }
     main {
       background: white;
       max-width: 420px;
-      margin: 40px auto;
+      margin: 35px auto;
       padding: 25px;
       border-radius: 12px;
+      box-shadow: 0 3px 14px #00000012;
     }
-    h1 {
-      color: #b45309;
+    h1 { color: #b45309; }
+    input, button {
+      box-sizing: border-box;
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 12px 0;
+      font-size: 16px;
+      border-radius: 7px;
     }
+    input { border: 1px solid #a8a29e; }
+    button {
+      background: #b45309;
+      color: white;
+      border: 0;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; }
+    #mensagem { overflow-wrap: anywhere; }
+    [hidden] { display: none !important; }
   </style>
 </head>
 <body>
   <main>
-    <h1>Área Administrativa</h1>
+    <h1>🍗 Área Administrativa</h1>
     <h2>Frango Assado Perto de Mim</h2>
     <p>Acesso exclusivo do administrador.</p>
-    <p>Login e cadastro em preparação.</p>
+
+    <section id="login">
+      <form id="formLogin">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" autocomplete="username" required>
+
+        <label for="senha">Senha</label>
+        <input id="senha" type="password"
+          autocomplete="current-password" required>
+
+        <button type="submit">Entrar</button>
+      </form>
+      <button id="recuperar" type="button">
+        Esqueci minha senha
+      </button>
+    </section>
+
+    <section id="novaSenha" hidden>
+      <h2>Criar nova senha</h2>
+      <form id="formSenha">
+        <label for="senhaNova">Nova senha</label>
+        <input id="senhaNova" type="password"
+          autocomplete="new-password" minlength="12" required>
+        <button type="submit">Salvar nova senha</button>
+      </form>
+    </section>
+
+    <section id="painel" hidden>
+      <h2>Acesso autorizado</h2>
+      <p>Login administrativo realizado com sucesso.</p>
+      <p>Cadastro de vendedores em preparação.</p>
+      <button id="sair" type="button">Sair</button>
+    </section>
+
+    <p id="mensagem" role="status" aria-live="polite"></p>
   </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    const URL_SUPABASE =
+      "https://mublqamdknlkrhtzzwfj.supabase.co";
+
+    const CHAVE_PUBLICA =
+      "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
+
+    const db = window.supabase.createClient(
+      URL_SUPABASE,
+      CHAVE_PUBLICA
+    );
+
+    const login = document.getElementById("login");
+    const painel = document.getElementById("painel");
+    const novaSenha = document.getElementById("novaSenha");
+    const mensagem = document.getElementById("mensagem");
+
+    function avisar(texto) {
+      mensagem.textContent = texto;
+    }
+
+    function mostrar(secao) {
+      login.hidden = secao !== "login";
+      painel.hidden = secao !== "painel";
+      novaSenha.hidden = secao !== "novaSenha";
+    }
+
+    async function verificarAdmin() {
+      const { data, error } = await db.auth.getUser();
+
+      if (error || !data.user) {
+        mostrar("login");
+        return;
+      }
+
+      if (data.user.app_metadata?.role !== "admin") {
+        await db.auth.signOut();
+        mostrar("login");
+        avisar("Esta conta não possui autorização administrativa.");
+        return;
+      }
+
+      mostrar("painel");
+      avisar("Administrador autenticado.");
+    }
+
+    document.getElementById("formLogin")
+      .addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+        avisar("Verificando acesso...");
+
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("senha").value;
+
+        const { error } = await db.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        document.getElementById("senha").value = "";
+
+        if (error) {
+          avisar("Não foi possível entrar. Confira e-mail e senha.");
+          return;
+        }
+
+        await verificarAdmin();
+      });
+
+    document.getElementById("recuperar")
+      .addEventListener("click", async () => {
+        const email = document.getElementById("email").value.trim();
+
+        if (!email) {
+          avisar("Digite seu e-mail antes de recuperar a senha.");
+          return;
+        }
+
+        const redirectTo = new URL(
+          "admin.html", window.location.href
+        ).href;
+
+        const { error } = await db.auth.resetPasswordForEmail(
+          email, { redirectTo }
+        );
+
+        avisar(error
+          ? "Não foi possível solicitar a recuperação."
+          : "Se o e-mail estiver cadastrado, você receberá instruções.");
+      });
+
+    document.getElementById("formSenha")
+      .addEventListener("submit", async (evento) => {
+        evento.preventDefault();
+
+        const password =
+          document.getElementById("senhaNova").value;
+
+        const { error } = await db.auth.updateUser({ password });
+
+        document.getElementById("senhaNova").value = "";
+
+        if (error) {
+          avisar("Não foi possível salvar a nova senha.");
+          return;
+        }
+
+        avisar("Senha atualizada. Verificando autorização...");
+        await verificarAdmin();
+      });
+
+    document.getElementById("sair")
+      .addEventListener("click", async () => {
+        await db.auth.signOut();
+        mostrar("login");
+        avisar("Você saiu da Área Administrativa.");
+      });
+
+    db.auth.onAuthStateChange((evento) => {
+      if (evento === "PASSWORD_RECOVERY") {
+        mostrar("novaSenha");
+        avisar("Escolha uma nova senha com pelo menos 12 caracteres.");
+      }
+    });
+
+    async function iniciar() {
+      const parametros = new URLSearchParams(
+        window.location.hash.substring(1)
+      );
+
+      if (parametros.get("type") === "recovery") {
+        mostrar("novaSenha");
+        return;
+      }
+
+      await verificarAdmin();
+    }
+
+    iniciar();
+  </script>
 </body>
 </html>
