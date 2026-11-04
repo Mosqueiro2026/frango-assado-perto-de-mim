@@ -2,175 +2,381 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Área do Vendedor - Frango Assado Perto de Mim</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: Arial, sans-serif;
-      background: #fff7ed;
-      color: #292524;
-      padding: 16px;
-      margin: 0;
-    }
-    main {
-      background: white;
-      max-width: 520px;
-      margin: 35px auto;
-      padding: 24px;
-      border-radius: 12px;
-      box-shadow: 0 3px 14px #00000012;
-    }
-    h1 { color: #b45309; }
-    label { display: block; margin-top: 14px; font-weight: bold; }
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-top: 5px;
-      border: 1px solid #aaa;
-      border-radius: 7px;
-      font-size: 16px;
-    }
-    button {
-      padding: 12px 18px;
-      margin-top: 18px;
-      background: #b45309;
-      color: white;
-      border: none;
-      border-radius: 7px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:disabled { opacity: .6; cursor: wait; }
-    #mensagem { margin-top: 16px; }
-    [hidden] { display: none !important; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Área do Vendedor - Frango Assado Perto de Mim</title>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, sans-serif;
+  background: #fff7ed;
+  color: #292524;
+  margin: 0;
+  padding: 16px;
+}
+main {
+  background: white;
+  max-width: 620px;
+  margin: 24px auto;
+  padding: 22px;
+  border-radius: 12px;
+  box-shadow: 0 3px 14px #00000012;
+}
+h1 { color: #b45309; }
+h3 { margin-top: 26px; }
+label {
+  display: block;
+  font-weight: bold;
+  margin-top: 12px;
+}
+input, select, textarea {
+  width: 100%;
+  padding: 11px;
+  margin-top: 5px;
+  border: 1px solid #aaa;
+  border-radius: 7px;
+  font: inherit;
+}
+button {
+  padding: 11px 15px;
+  margin-top: 12px;
+  background: #b45309;
+  color: white;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+}
+button:disabled { opacity: .5; }
+button.secundario { background: #57534e; }
+.produto {
+  border: 1px solid #ddd;
+  border-radius: 9px;
+  padding: 14px;
+  margin-top: 12px;
+}
+[hidden] { display: none !important; }
+#mensagem { padding: 8px 0; }
+</style>
 </head>
 <body>
-  <main>
-    <h1>🍗 Área do Vendedor</h1>
-    <h2>Frango Assado Perto de Mim</h2>
+<main>
+<h1>🍗 Área do Vendedor</h1>
+<h2>Frango Assado Perto de Mim</h2>
+<p id="mensagem" role="status">Verificando acesso...</p>
 
-    <p id="mensagem" role="status">Verificando acesso...</p>
+<section id="login" hidden>
+  <form id="formLogin">
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="senha">Senha</label>
+    <input id="senha" type="password"
+           autocomplete="current-password" required>
+    <button id="entrar" type="submit">Entrar</button>
+  </form>
+</section>
 
-    <section id="login" hidden>
-      <p>Entre com seu e-mail e senha cadastrados.</p>
-      <form id="formLogin">
-        <label for="email">E-mail</label>
-        <input id="email" type="email" autocomplete="username" required>
+<section id="painel" hidden>
+  <h3>Meu cadastro</h3>
+  <p id="identificacao"></p>
 
-        <label for="senha">Senha</label>
-        <input id="senha" type="password"
-               autocomplete="current-password" required>
+  <form id="formCadastro">
+    <label for="preco">Preço principal (R$)</label>
+    <input id="preco" type="number" min="0.01" step="0.01" required>
 
-        <button id="entrar" type="submit">Entrar</button>
-      </form>
-    </section>
+    <label for="whatsapp">WhatsApp principal (com DDD)</label>
+    <input id="whatsapp" type="tel" required>
 
-    <section id="painel" hidden>
-      <h3>Meu cadastro</h3>
-      <p id="nomeVendedor"></p>
-      <p id="bairroVendedor"></p>
-      <p id="precoVendedor"></p>
-      <p>Consulta disponível. Edição em preparação.</p>
-      <button id="sair" type="button">Sair</button>
-    </section>
-  </main>
+    <label for="whatsapp2">Segundo WhatsApp (opcional)</label>
+    <input id="whatsapp2" type="tel">
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-  <script>
-    const URL_SUPABASE = "https://mublqamdknlkrhtzzwfj.supabase.co";
-    const CHAVE_PUBLICA = "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
-    const db = window.supabase.createClient(URL_SUPABASE, CHAVE_PUBLICA);
+    <button type="submit">Salvar meu cadastro</button>
+  </form>
 
-    const login = document.getElementById("login");
-    const painel = document.getElementById("painel");
-    const mensagem = document.getElementById("mensagem");
-    const entrar = document.getElementById("entrar");
+  <h3>Meus produtos</h3>
+  <div id="listaProdutos"></div>
 
-    function avisar(texto) {
-      mensagem.textContent = texto;
-    }
+  <h3 id="tituloProduto">Cadastrar produto</h3>
+  <form id="formProduto">
+    <label for="nomeProduto">Nome do produto</label>
+    <input id="nomeProduto" required maxlength="120">
 
-    async function verificarAcesso() {
-      login.hidden = true;
-      painel.hidden = true;
+    <label for="categoria">Categoria</label>
+    <input id="categoria" value="Frango assado" required>
 
-      const { data, error } = await db.auth.getUser();
+    <label for="descricao">Descrição (opcional)</label>
+    <textarea id="descricao" rows="3"></textarea>
 
-      if (error || !data.user) {
-        login.hidden = false;
-        avisar("Faça seu login para continuar.");
-        return;
-      }
+    <label for="precoProduto">Preço (R$)</label>
+    <input id="precoProduto" type="number"
+           min="0.01" step="0.01" required>
 
-      const { data: vendedores, error: erroVendedor } = await db
-        .from("vendedores")
-        .select("id,nome,bairro,preco")
-        .eq("user_id", data.user.id)
-        .limit(1);
+    <label for="disponivel">Disponibilidade</label>
+    <select id="disponivel">
+      <option value="true">Disponível</option>
+      <option value="false">Indisponível</option>
+    </select>
 
-      if (erroVendedor) {
-        avisar("Não foi possível consultar seu cadastro.");
-        return;
-      }
+    <button type="submit" id="salvarProduto">Salvar produto</button>
+    <button type="button" id="cancelarEdicao"
+            class="secundario" hidden>Cancelar edição</button>
+  </form>
 
-      if (!vendedores || vendedores.length === 0) {
-        avisar("Esta conta ainda não está vinculada a um vendedor. Procure o administrador.");
-        document.getElementById("sair").hidden = false;
-        painel.hidden = false;
-        return;
-      }
+  <button id="sair" type="button" class="secundario">Sair</button>
+</section>
+</main>
 
-      const vendedor = vendedores[0];
-      document.getElementById("nomeVendedor").textContent =
-        "Vendedor: " + vendedor.nome;
-      document.getElementById("bairroVendedor").textContent =
-        "Bairro: " + (vendedor.bairro || "Não informado");
-      document.getElementById("precoVendedor").textContent =
-        "Preço: " + (vendedor.preco == null
-          ? "Não informado"
-          : Number(vendedor.preco).toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL"
-            }));
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+const db = window.supabase.createClient(
+  "https://mublqamdknlkrhtzzwfj.supabase.co",
+  "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85"
+);
 
-      painel.hidden = false;
-      avisar("Acesso autorizado.");
-    }
+const $ = id => document.getElementById(id);
+let vendedor = null;
+let produtos = [];
+let produtoEmEdicao = null;
 
-    document.getElementById("formLogin").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      entrar.disabled = true;
-      avisar("Entrando...");
+function avisar(texto) {
+  $("mensagem").textContent = texto;
+}
+function moeda(valor) {
+  return Number(valor).toLocaleString("pt-BR", {
+    style: "currency", currency: "BRL"
+  });
+}
+function telefone(valor) {
+  let n = String(valor || "").replace(/\D/g, "");
+  if (n.startsWith("55") && n.length > 11) n = n.slice(2);
+  return n;
+}
+function limparProduto() {
+  produtoEmEdicao = null;
+  $("formProduto").reset();
+  $("categoria").value = "Frango assado";
+  $("tituloProduto").textContent = "Cadastrar produto";
+  $("cancelarEdicao").hidden = true;
+}
+function mostrarLogin(texto) {
+  vendedor = null;
+  produtos = [];
+  $("painel").hidden = true;
+  $("login").hidden = false;
+  avisar(texto);
+}
+async function iniciar() {
+  $("login").hidden = true;
+  $("painel").hidden = true;
+  avisar("Verificando acesso...");
 
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("senha").value;
+  const { data, error } = await db.auth.getUser();
+  if (error || !data.user) {
+    mostrarLogin("Entre com seu e-mail e senha.");
+    return;
+  }
 
-      const { error } = await db.auth.signInWithPassword({
-        email, password
-      });
+  const resposta = await db.from("vendedores")
+    .select("id,nome,bairro,preco,whatsapp,whatsapp2")
+    .eq("user_id", data.user.id)
+    .limit(1);
 
-      document.getElementById("senha").value = "";
-      entrar.disabled = false;
+  if (resposta.error) {
+    avisar("Erro ao consultar cadastro: " + resposta.error.message);
+    return;
+  }
+  if (!resposta.data || !resposta.data.length) {
+    avisar("Sua conta não está vinculada a um vendedor. Procure o administrador.");
+    $("painel").hidden = false;
+    $("formCadastro").hidden = true;
+    $("formProduto").hidden = true;
+    $("listaProdutos").hidden = true;
+    $("tituloProduto").hidden = true;
+    $("identificacao").textContent = "";
+    return;
+  }
 
-      if (error) {
-        avisar("Não foi possível entrar. Confira e-mail e senha.");
-        return;
-      }
+  vendedor = resposta.data[0];
+  $("formCadastro").hidden = false;
+  $("formProduto").hidden = false;
+  $("listaProdutos").hidden = false;
+  $("tituloProduto").hidden = false;
+  $("identificacao").textContent =
+    vendedor.nome + " — " + (vendedor.bairro || "");
+  $("preco").value = vendedor.preco ?? "";
+  $("whatsapp").value = vendedor.whatsapp || "";
+  $("whatsapp2").value = vendedor.whatsapp2 || "";
+  $("painel").hidden = false;
+  limparProduto();
+  await carregarProdutos();
+  avisar("Acesso autorizado.");
+}
+async function carregarProdutos() {
+  const { data, error } = await db.from("produtos")
+    .select("id,nome,descricao,categoria,preco,disponivel")
+    .eq("vendedor_id", vendedor.id)
+    .order("id", { ascending: true });
 
-      await verificarAcesso();
-    });
+  if (error) {
+    avisar("Erro ao carregar produtos: " + error.message);
+    return;
+  }
+  produtos = data || [];
+  const lista = $("listaProdutos");
+  lista.replaceChildren();
 
-    document.getElementById("sair").addEventListener("click", async () => {
-      await db.auth.signOut();
-      painel.hidden = true;
-      login.hidden = false;
-      avisar("Você saiu da sua conta.");
-    });
+  if (!produtos.length) {
+    lista.textContent = "Nenhum produto cadastrado.";
+    return;
+  }
 
-    verificarAcesso();
-  </script>
+  for (const p of produtos) {
+    const div = document.createElement("div");
+    div.className = "produto";
+    const titulo = document.createElement("strong");
+    titulo.textContent = p.nome;
+    const info = document.createElement("p");
+    info.textContent = moeda(p.preco) + " — " +
+      (p.disponivel ? "Disponível" : "Indisponível");
+    const editar = document.createElement("button");
+    editar.textContent = "Editar";
+    editar.type = "button";
+    editar.addEventListener("click", () => editarProduto(p.id));
+    const excluir = document.createElement("button");
+    excluir.textContent = "Excluir";
+    excluir.type = "button";
+    excluir.className = "secundario";
+    excluir.style.marginLeft = "8px";
+    excluir.addEventListener("click", () => excluirProduto(p.id));
+    div.append(titulo, info, editar, excluir);
+    lista.append(div);
+  }
+}
+function editarProduto(id) {
+  const p = produtos.find(item => item.id === id);
+  if (!p) return;
+  produtoEmEdicao = id;
+  $("nomeProduto").value = p.nome || "";
+  $("categoria").value = p.categoria || "";
+  $("descricao").value = p.descricao || "";
+  $("precoProduto").value = p.preco ?? "";
+  $("disponivel").value = String(p.disponivel);
+  $("tituloProduto").textContent = "Editar produto";
+  $("cancelarEdicao").hidden = false;
+  $("formProduto").scrollIntoView({ behavior: "smooth" });
+}
+async function excluirProduto(id) {
+  if (!vendedor) return;
+  if (!confirm("Deseja realmente excluir este produto?")) return;
+
+  const { data, error } = await db.from("produtos")
+    .delete()
+    .eq("id", id)
+    .eq("vendedor_id", vendedor.id)
+    .select("id");
+
+  if (error || !data || !data.length) {
+    avisar("Não foi possível excluir o produto.");
+    return;
+  }
+  limparProduto();
+  await carregarProdutos();
+  avisar("Produto excluído.");
+}
+$("formLogin").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("entrar").disabled = true;
+  avisar("Entrando...");
+  const { error } = await db.auth.signInWithPassword({
+    email: $("email").value.trim(),
+    password: $("senha").value
+  });
+  $("senha").value = "";
+  $("entrar").disabled = false;
+  if (error) {
+    avisar("Não foi possível entrar. Confira e-mail e senha.");
+    return;
+  }
+  await iniciar();
+});
+$("formCadastro").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!vendedor) return;
+
+  const w1 = telefone($("whatsapp").value);
+  const w2 = telefone($("whatsapp2").value);
+  if (![10, 11].includes(w1.length) ||
+      (w2 && ![10, 11].includes(w2.length)) ||
+      (w2 && w1 === w2)) {
+    avisar("Confira os números de WhatsApp com DDD.");
+    return;
+  }
+
+  const botao = e.submitter;
+  botao.disabled = true;
+  const { data, error } = await db.from("vendedores")
+    .update({
+      preco: Number($("preco").value),
+      whatsapp: w1,
+      whatsapp2: w2 || null
+    })
+    .eq("id", vendedor.id)
+    .select("id");
+
+  botao.disabled = false;
+  if (error || !data || !data.length) {
+    avisar("Não foi possível salvar o cadastro.");
+    return;
+  }
+  avisar("Cadastro atualizado com sucesso.");
+});
+$("formProduto").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!vendedor) return;
+  const botao = $("salvarProduto");
+  botao.disabled = true;
+
+  const dados = {
+    nome: $("nomeProduto").value.trim(),
+    categoria: $("categoria").value.trim(),
+    descricao: $("descricao").value.trim(),
+    preco: Number($("precoProduto").value),
+    disponivel: $("disponivel").value === "true"
+  };
+
+  let consulta;
+  if (produtoEmEdicao !== null) {
+    consulta = db.from("produtos")
+      .update(dados)
+      .eq("id", produtoEmEdicao)
+      .eq("vendedor_id", vendedor.id)
+      .select("id");
+  } else {
+    consulta = db.from("produtos")
+      .insert({ ...dados, vendedor_id: vendedor.id })
+      .select("id");
+  }
+
+  const { data, error } = await consulta;
+  botao.disabled = false;
+
+  if (error || !data || !data.length) {
+    avisar("Não foi possível salvar o produto. Verifique as permissões.");
+    return;
+  }
+  limparProduto();
+  await carregarProdutos();
+  avisar("Produto salvo com sucesso.");
+});
+$("cancelarEdicao").addEventListener("click", limparProduto);
+$("sair").addEventListener("click", async () => {
+  const { error } = await db.auth.signOut();
+  if (error) {
+    avisar("Não foi possível sair. Tente novamente.");
+    return;
+  }
+  mostrarLogin("Você saiu da sua conta.");
+});
+iniciar();
+</script>
 </body>
 </html>
