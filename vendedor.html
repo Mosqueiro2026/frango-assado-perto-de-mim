@@ -1,3 +1,4 @@
+```
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -47,6 +48,8 @@ button {
 }
 button:disabled { opacity: .5; }
 button.secundario { background: #57534e; }
+.foto-produto { display:block; width:160px; max-width:100%; height:auto; border-radius:8px; margin:10px 0; }
+.ajuda { color:#57534e; font-size:0.9rem; }
 .produto {
   border: 1px solid #ddd;
   border-radius: 9px;
@@ -112,6 +115,11 @@ button.secundario { background: #57534e; }
       <option value="false">Indisponível</option>
     </select>
 
+    <label for="fotoProduto">Fotografia do produto (opcional)</label>
+    <input id="fotoProduto" type="file" accept="image/jpeg,image/png,image/webp">
+    <p class="ajuda">JPG, PNG ou WebP, até 2 MB. Ao editar, deixe vazio para manter a fotografia atual.</p>
+    <div id="fotoAtual"></div>
+
     <button type="submit" id="salvarProduto">Salvar produto</button>
     <button type="button" id="cancelarEdicao"
             class="secundario" hidden>Cancelar edição</button>
@@ -132,6 +140,59 @@ const $ = id => document.getElementById(id);
 let vendedor = null;
 let produtos = [];
 let produtoEmEdicao = null;
+const BUCKET_FOTOS = "fotos-produtos";
+const TIPOS_FOTO = {
+  "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"
+};
+
+function validarFoto(arquivo) {
+  if (!arquivo) return null;
+  if (!Object.hasOwn(TIPOS_FOTO, arquivo.type)) {
+    return "Escolha uma fotografia JPG, PNG ou WebP.";
+  }
+  if (arquivo.size > 2 * 1024 * 1024) {
+    return "A fotografia deve ter no máximo 2 MB.";
+  }
+  return null;
+}
+
+function mostrarFotoAtual(url) {
+  const area = $("fotoAtual");
+  area.replaceChildren();
+  if (!url) return;
+  const imagem = document.createElement("img");
+  imagem.src = url;
+  imagem.alt = "Fotografia atual do produto";
+  imagem.className = "foto-produto";
+  imagem.loading = "lazy";
+  area.append(imagem);
+}
+
+async function enviarFoto(produtoId, arquivo) {
+  const erroFoto = validarFoto(arquivo);
+  if (erroFoto) throw new Error(erroFoto);
+  // A pasta é o ID do produto, conforme as políticas de segurança do Storage.
+  const caminho = `${produtoId}/${crypto.randomUUID()}.${TIPOS_FOTO[arquivo.type]}`;
+  const envio = await db.storage.from(BUCKET_FOTOS).upload(caminho, arquivo, {
+    contentType: arquivo.type,
+    upsert: false
+  });
+  if (envio.error) throw envio.error;
+
+  const { data: urlData } = db.storage.from(BUCKET_FOTOS).getPublicUrl(caminho);
+  const url = urlData.publicUrl;
+  const gravacao = await db.from("produtos")
+    .update({ foto_url: url })
+    .eq("id", produtoId)
+    .eq("vendedor_id", vendedor.id)
+    .select("id");
+  if (gravacao.error || !gravacao.data || !gravacao.data.length) {
+    // Evita deixar a nova imagem sem vínculo caso o banco rejeite a atualização.
+    await db.storage.from(BUCKET_FOTOS).remove([caminho]);
+    throw new Error(gravacao.error?.message || "Não foi possível associar a fotografia ao produto.");
+  }
+  return url;
+}
 
 function avisar(texto) {
   $("mensagem").textContent = texto;
@@ -149,6 +210,7 @@ function telefone(valor) {
 function limparProduto() {
   produtoEmEdicao = null;
   $("formProduto").reset();
+  mostrarFotoAtual(null);
   $("categoria").value = "Frango assado";
   $("tituloProduto").textContent = "Cadastrar produto";
   $("cancelarEdicao").hidden = true;
@@ -207,7 +269,7 @@ async function iniciar() {
 }
 async function carregarProdutos() {
   const { data, error } = await db.from("produtos")
-    .select("id,nome,descricao,categoria,preco,disponivel")
+    .select("id,nome,descricao,categoria,preco,disponivel,foto_url")
     .eq("vendedor_id", vendedor.id)
     .order("id", { ascending: true });
 
@@ -242,7 +304,16 @@ async function carregarProdutos() {
     excluir.className = "secundario";
     excluir.style.marginLeft = "8px";
     excluir.addEventListener("click", () => excluirProduto(p.id));
-    div.append(titulo, info, editar, excluir);
+    div.append(titulo, info);
+    if (p.foto_url) {
+      const imagem = document.createElement("img");
+      imagem.src = p.foto_url;
+      imagem.alt = "Foto de " + p.nome;
+      imagem.className = "foto-produto";
+      imagem.loading = "lazy";
+      div.append(imagem);
+    }
+    div.append(editar, excluir);
     lista.append(div);
   }
 }
@@ -255,6 +326,8 @@ function editarProduto(id) {
   $("descricao").value = p.descricao || "";
   $("precoProduto").value = p.preco ?? "";
   $("disponivel").value = String(p.disponivel);
+  $("fotoProduto").value = "";
+  mostrarFotoAtual(p.foto_url);
   $("tituloProduto").textContent = "Editar produto";
   $("cancelarEdicao").hidden = false;
   $("formProduto").scrollIntoView({ behavior: "smooth" });
@@ -327,7 +400,14 @@ $("formProduto").addEventListener("submit", async e => {
   e.preventDefault();
   if (!vendedor) return;
   const botao = $("salvarProduto");
+  const arquivo = $("fotoProduto").files[0];
+  const erroFoto = validarFoto(arquivo);
+  if (erroFoto) {
+    avisar(erroFoto);
+    return;
+  }
   botao.disabled = true;
+  avisar("Salvando produto...");
 
   const dados = {
     nome: $("nomeProduto").value.trim(),
@@ -351,15 +431,27 @@ $("formProduto").addEventListener("submit", async e => {
   }
 
   const { data, error } = await consulta;
-  botao.disabled = false;
-
   if (error || !data || !data.length) {
+    botao.disabled = false;
     avisar("Não foi possível salvar o produto. Verifique as permissões.");
     return;
   }
+
+  let mensagem = "Produto salvo com sucesso.";
+  if (arquivo) {
+    try {
+      avisar("Produto salvo. Enviando fotografia...");
+      await enviarFoto(data[0].id, arquivo);
+      mensagem = "Produto e fotografia salvos com sucesso.";
+    } catch (erro) {
+      console.error("Falha ao enviar fotografia:", erro);
+      mensagem = "Produto salvo, mas a fotografia não foi enviada: " + erro.message;
+    }
+  }
+  botao.disabled = false;
   limparProduto();
   await carregarProdutos();
-  avisar("Produto salvo com sucesso.");
+  avisar(mensagem);
 });
 $("cancelarEdicao").addEventListener("click", limparProduto);
 $("sair").addEventListener("click", async () => {
@@ -374,3 +466,4 @@ iniciar();
 </script>
 </body>
 </html>
+```
