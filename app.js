@@ -1,10 +1,13 @@
 
-/* Versão pública: somente leitura via Supabase; sem painel de administração. */
+/* Catálogo público — Frango Assado Perto de Mim.
+   Somente leitura; sem funções administrativas. */
+
 const SUPABASE_URL = "https://mublqamdknlkrhtzzwfj.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
 
 const lista = document.getElementById("listaVendedores");
 let vendedores = [];
+let produtos = [];
 let bairroSelecionado = "Todos";
 
 function textoSeguro(valor) {
@@ -21,9 +24,7 @@ function formatarPreco(valor) {
   if (valor === null || valor === undefined || valor === "") {
     return "A confirmar";
   }
-
   const numero = Number(valor);
-
   return Number.isFinite(numero)
     ? numero.toLocaleString("pt-BR", {
         style: "currency",
@@ -34,44 +35,81 @@ function formatarPreco(valor) {
 
 function normalizarTelefone(valor) {
   let numero = String(valor ?? "").replace(/\D/g, "");
-
   if (numero.startsWith("55") && numero.length > 11) {
     numero = numero.substring(2);
   }
-
   return /^\d{10,11}$/.test(numero) ? numero : null;
 }
 
 function criarContato(valor, identificacao) {
   const telefone = normalizarTelefone(valor);
-
   if (!telefone) return "";
-
-  const telefoneWhatsApp = "55" + telefone;
-  const telefoneLigacao = "+55" + telefone;
 
   return `
     <div class="contato-vendedor">
-      <p><strong>${identificacao}:</strong> ${textoSeguro(telefone)}</p>
+      <p><strong>${textoSeguro(identificacao)}:</strong>
+        ${textoSeguro(telefone)}</p>
       <p>
-        <a href="https://wa.me/${telefoneWhatsApp}"
-           target="_blank"
-           rel="noopener noreferrer">
+        <a href="https://wa.me/55${telefone}"
+           target="_blank" rel="noopener noreferrer">
           💬 WhatsApp
         </a>
         &nbsp; | &nbsp;
-        <a href="tel:${telefoneLigacao}">
-          📞 Ligar
-        </a>
+        <a href="tel:+55${telefone}">📞 Ligar</a>
       </p>
     </div>
   `;
 }
 
+function criarPedido(produto, vendedor) {
+  const telefone = normalizarTelefone(
+    vendedor.whatsapp || vendedor.whatsapp2
+  );
+  if (!telefone) return "";
+
+  const mensagem = `Olá! Gostaria de pedir ${produto.nome} (${formatarPreco(produto.preco)}). Vi no Frango Assado Perto de Mim.`;
+
+  return `
+    <a href="https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}"
+       target="_blank" rel="noopener noreferrer">
+      💬 Pedir pelo WhatsApp
+    </a>
+  `;
+}
+
+function renderizarProdutos(vendedor) {
+  const itens = produtos.filter(p => p.vendedor_id === vendedor.id);
+
+  if (!itens.length) {
+    return `<p class="observacao">Cardápio em preparação.
+      Consulte o vendedor pelo WhatsApp.</p>`;
+  }
+
+  return `
+    <div class="catalogo-produtos">
+      <h4>Cardápio</h4>
+      ${itens.map(p => `
+        <div class="produto-card">
+          <div class="produto-foto" aria-hidden="true">🍗</div>
+          <div class="produto-detalhes">
+            <strong>${textoSeguro(p.nome)}</strong>
+            ${p.descricao
+              ? `<p>${textoSeguro(p.descricao)}</p>`
+              : ""}
+            <p><strong>${formatarPreco(p.preco)}</strong></p>
+            <p>${p.disponivel ? "Disponível" : "Indisponível"}</p>
+            ${p.disponivel ? criarPedido(p, vendedor) : ""}
+          </div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function renderizar() {
-  const filtrados = vendedores.filter(
-    v => bairroSelecionado === "Todos" ||
-         v.bairro === bairroSelecionado
+  const filtrados = vendedores.filter(v =>
+    bairroSelecionado === "Todos" ||
+    v.bairro === bairroSelecionado
   );
 
   if (!filtrados.length) {
@@ -80,74 +118,73 @@ function renderizar() {
     return;
   }
 
-  lista.innerHTML = filtrados.map(v => {
-    const contato1 = criarContato(v.whatsapp, "Contato 1");
-    const contato2 = criarContato(v.whatsapp2, "Contato 2");
+  lista.innerHTML = filtrados.map(v => `
+    <article class="vendedor-card">
+      <h3>${textoSeguro(v.nome || "Vendedor")}</h3>
+      <p><strong>Bairro:</strong>
+        ${textoSeguro(v.bairro || "A confirmar")}</p>
+      <p><strong>Endereço:</strong>
+        ${textoSeguro(v.endereco || "A confirmar")}</p>
+      ${renderizarProdutos(v)}
+      ${criarContato(v.whatsapp, "Contato 1")}
+      ${criarContato(v.whatsapp2, "Contato 2")}
+      <p class="observacao">
+        Confirme preços, horários e disponibilidade
+        diretamente com o vendedor.
+      </p>
+    </article>
+  `).join("");
+}
 
-    return `
-      <article class="vendedor-card">
-        <h3>${textoSeguro(v.nome || "Vendedor")}</h3>
+async function consultarTabela(tabela, parametros) {
+  const resposta = await fetch(
+    `${SUPABASE_URL}/rest/v1/${tabela}?${parametros}`,
+    {
+      headers: {
+        apikey: SUPABASE_PUBLISHABLE_KEY,
+        Accept: "application/json"
+      },
+      cache: "no-store"
+    }
+  );
 
-        <p><strong>Bairro:</strong>
-          ${textoSeguro(v.bairro || "A confirmar")}</p>
+  if (!resposta.ok) {
+    throw new Error(`Erro ao consultar ${tabela}: HTTP ${resposta.status}`);
+  }
 
-        <p><strong>Preço:</strong>
-          ${formatarPreco(v.preco)}</p>
-
-        <p><strong>Endereço:</strong>
-          ${textoSeguro(v.endereco || "A confirmar")}</p>
-
-        ${contato1}
-        ${contato2}
-
-        <p class="observacao">
-          Confirme preço, horário e disponibilidade
-          diretamente com o vendedor.
-        </p>
-      </article>
-    `;
-  }).join("");
+  const dados = await resposta.json();
+  if (!Array.isArray(dados)) {
+    throw new Error("Resposta inesperada");
+  }
+  return dados;
 }
 
 async function carregarVendedores() {
-  lista.innerHTML = "<p>Carregando vendedores...</p>";
+  lista.innerHTML = "<p>Carregando vendedores e produtos...</p>";
 
   try {
-    const resposta = await fetch(
-      `${SUPABASE_URL}/rest/v1/vendedores?select=nome,bairro,preco,endereco,whatsapp,whatsapp2&order=nome.asc`,
-      {
-        headers: {
-          "apikey": SUPABASE_PUBLISHABLE_KEY,
-          "Accept": "application/json"
-        },
-        cache: "no-store"
-      }
+    const dadosVendedores = await consultarTabela(
+      "vendedores",
+      "select=id,nome,bairro,endereco,whatsapp,whatsapp2&ativo=eq.true&order=nome.asc"
     );
 
-    if (!resposta.ok) {
-      throw new Error(`HTTP ${resposta.status}`);
-    }
+    const dadosProdutos = await consultarTabela(
+      "produtos",
+      "select=id,vendedor_id,nome,descricao,categoria,preco,disponivel&order=id.asc"
+    );
 
-    const dados = await resposta.json();
-
-    if (!Array.isArray(dados)) {
-      throw new Error("Resposta inesperada");
-    }
-
-    vendedores = dados;
+    vendedores = dadosVendedores;
+    produtos = dadosProdutos;
     renderizar();
-
   } catch (erro) {
-    console.error("Falha ao consultar vendedores:", erro);
-
+    console.error("Falha ao carregar catálogo:", erro);
     lista.innerHTML = `
-      <p>Não foi possível consultar os vendedores agora.
+      <p>Não foi possível consultar o catálogo agora.
       Confira a conexão e tente novamente.</p>
       <button type="button" id="tentarNovamente">
         Tentar novamente
       </button>
     `;
-
     document.getElementById("tentarNovamente")
       .addEventListener("click", carregarVendedores);
   }
