@@ -2,770 +2,1061 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Administração - Frango Assado Perto de Mim</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #fff7ed;
-      padding: 20px;
-      color: #292524;
-    }
-    main {
-      background: white;
-      max-width: 850px;
-      margin: 35px auto;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 3px 14px #00000012;
-    }
-    h1, h3 { color: #b45309; }
-    input, button {
-      box-sizing: border-box;
-      display: block;
-      width: 100%;
-      padding: 12px;
-      margin: 12px 0;
-      font-size: 16px;
-      border-radius: 7px;
-    }
-    input { border: 1px solid #a8a29e; }
-    button {
-      background: #b45309;
-      color: white;
-      border: 0;
-      cursor: pointer;
-    }
-    button:disabled { opacity: .6; }
-    #mensagem, #mensagemCadastro, #mensagemHistorico {
-      overflow-wrap: anywhere;
-    }
-    [hidden] { display: none !important; }
-    hr {
-      border: 0;
-      border-top: 1px solid #e7e5e4;
-      margin: 25px 0;
-    }
-    label {
-      display: block;
-      font-weight: bold;
-      margin-top: 12px;
-    }
-    .tabela-container {
-      width: 100%;
-      overflow-x: auto;
-      margin-top: 15px;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      font-size: 14px;
-    }
-    th, td {
-      border: 1px solid #e7e5e4;
-      padding: 10px;
-      text-align: left;
-      vertical-align: top;
-    }
-    th { background: #ffedd5; }
-    td.dados {
-      min-width: 180px;
-      max-width: 300px;
-      white-space: pre-wrap;
-      overflow-wrap: anywhere;
-      font-family: monospace;
-      font-size: 12px;
-    }
-    .secundario { background: #57534e; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Administração - Frango Assado Perto de Mim</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #fff7ed;
+    padding: 16px;
+    color: #292524;
+  }
+  main {
+    background: white;
+    max-width: 850px;
+    margin: 25px auto;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 3px 14px #00000012;
+  }
+  h1, h3 { color: #b45309; }
+  input, button {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin: 12px 0;
+    font-size: 16px;
+    border-radius: 7px;
+  }
+  input { border: 1px solid #a8a29e; }
+  button {
+    background: #b45309;
+    color: white;
+    border: 0;
+    cursor: pointer;
+  }
+  button:disabled { opacity: .6; }
+  [hidden] { display: none !important; }
+  hr {
+    border: 0;
+    border-top: 1px solid #e7e5e4;
+    margin: 25px 0;
+  }
+  label {
+    display: block;
+    font-weight: bold;
+    margin-top: 12px;
+  }
+  .secundario { background: #57534e; }
+  #mensagem, #mensagemCadastro,
+  #mensagemHistorico { overflow-wrap: anywhere; }
+
+  /* Histórico organizado */
+  .registro {
+    border: 1px solid #e7e5e4;
+    border-radius: 12px;
+    margin: 15px 0;
+    padding: 17px;
+    background: #fffdf9;
+  }
+  .registro-topo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .data {
+    color: #78716c;
+    font-size: 13px;
+  }
+  .tipo {
+    background: #ffedd5;
+    color: #92400e;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  .registro h3 {
+    margin: 8px 0;
+    font-size: 18px;
+  }
+  .subtitulo {
+    color: #57534e;
+    font-size: 14px;
+    margin: 5px 0 14px;
+  }
+  .mudanca {
+    border-top: 1px solid #eee5d8;
+    padding: 12px 0;
+  }
+  .mudanca strong {
+    display: block;
+    margin-bottom: 8px;
+  }
+  .comparacao {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .valor {
+    background: #f5f5f4;
+    padding: 10px;
+    border-radius: 8px;
+    overflow-wrap: anywhere;
+    min-width: 0;
+  }
+  .valor.novo { background: #ecfdf5; }
+  .valor small {
+    display: block;
+    color: #57534e;
+    margin-bottom: 6px;
+  }
+  .valor span {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  details {
+    margin-top: 12px;
+    border-top: 1px solid #e7e5e4;
+    padding-top: 12px;
+  }
+  summary {
+    cursor: pointer;
+    color: #92400e;
+    font-weight: bold;
+  }
+  pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+    background: #f5f5f4;
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .aviso {
+    font-size: 13px;
+    color: #78716c;
+  }
+  @media (max-width: 540px) {
+    main { padding: 15px; }
+    .comparacao { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
-  <main>
-    <h1>🍗 Área Administrativa</h1>
-    <h2>Frango Assado Perto de Mim</h2>
-    <p>Acesso exclusivo do administrador.</p>
+<main>
+  <h1>🍗 Área Administrativa</h1>
+  <h2>Frango Assado Perto de Mim</h2>
+  <p>Acesso exclusivo do administrador.</p>
 
-    <section id="login" hidden>
-      <form id="formLogin">
-        <label for="email">E-mail</label>
-        <input id="email" type="email"
-          autocomplete="username" required>
+  <section id="login" hidden>
+    <form id="formLogin">
+      <label for="email">E-mail</label>
+      <input id="email" type="email"
+        autocomplete="username" required>
+      <label for="senha">Senha</label>
+      <input id="senha" type="password"
+        autocomplete="current-password" required>
+      <button type="submit">Entrar</button>
+    </form>
+    <button id="recuperar" type="button">
+      Esqueci minha senha
+    </button>
+  </section>
 
-        <label for="senha">Senha</label>
-        <input id="senha" type="password"
-          autocomplete="current-password" required>
+  <section id="novaSenha" hidden>
+    <h2>Criar nova senha</h2>
+    <form id="formSenha">
+      <label for="senhaNova">Nova senha</label>
+      <input id="senhaNova" type="password"
+        autocomplete="new-password" minlength="12" required>
+      <button type="submit">Salvar nova senha</button>
+    </form>
+  </section>
 
-        <button type="submit">Entrar</button>
-      </form>
-      <button id="recuperar" type="button">
-        Esqueci minha senha
+  <section id="painel" hidden>
+    <h2>Acesso autorizado</h2>
+    <p>Login administrativo realizado com sucesso.</p>
+    <hr>
+
+    <h2>Cadastrar vendedor</h2>
+    <form id="formVendedor">
+      <label for="nomeVendedor">Nome do vendedor</label>
+      <input id="nomeVendedor" type="text"
+        maxlength="150" required>
+
+      <label for="bairroVendedor">Bairro</label>
+      <input id="bairroVendedor" type="text"
+        maxlength="150" required>
+
+      <label for="precoVendedor">Preço (R$)</label>
+      <input id="precoVendedor" type="number"
+        min="0.01" step="0.01" required>
+
+      <label for="enderecoVendedor">Endereço</label>
+      <input id="enderecoVendedor" type="text"
+        maxlength="300" required>
+
+      <label for="whatsappVendedor">
+        WhatsApp 1 (obrigatório)
+      </label>
+      <input id="whatsappVendedor" type="tel"
+        placeholder="12999999999" required>
+
+      <label for="whatsapp2Vendedor">
+        WhatsApp 2 (opcional)
+      </label>
+      <input id="whatsapp2Vendedor" type="tel"
+        placeholder="Se tiver outro número">
+
+      <button id="salvarVendedor" type="submit">
+        Salvar vendedor
       </button>
-    </section>
+    </form>
+    <p id="mensagemCadastro"
+      role="status" aria-live="polite"></p>
 
-    <section id="novaSenha" hidden>
-      <h2>Criar nova senha</h2>
-      <form id="formSenha">
-        <label for="senhaNova">Nova senha</label>
-        <input id="senhaNova" type="password"
-          autocomplete="new-password"
-          minlength="12" required>
-        <button type="submit">Salvar nova senha</button>
-      </form>
-    </section>
+    <hr>
 
-    <section id="painel" hidden>
-      <h2>Acesso autorizado</h2>
-      <p>Login administrativo realizado com sucesso.</p>
-
-      <hr>
-
-      <h2>Cadastrar vendedor</h2>
-      <form id="formVendedor">
-        <label for="nomeVendedor">Nome do vendedor</label>
-        <input id="nomeVendedor" type="text"
-          maxlength="150" required>
-
-        <label for="bairroVendedor">Bairro</label>
-        <input id="bairroVendedor" type="text"
-          maxlength="150" required>
-
-        <label for="precoVendedor">Preço (R$)</label>
-        <input id="precoVendedor" type="number"
-          min="0.01" step="0.01" required>
-
-        <label for="enderecoVendedor">Endereço</label>
-        <input id="enderecoVendedor" type="text"
-          maxlength="300" required>
-
-        <label for="whatsappVendedor">
-          WhatsApp 1 (obrigatório)
-        </label>
-        <input id="whatsappVendedor" type="tel"
-          placeholder="12999999999" required>
-
-        <label for="whatsapp2Vendedor">
-          WhatsApp 2 (opcional)
-        </label>
-        <input id="whatsapp2Vendedor" type="tel"
-          placeholder="Se tiver outro número">
-
-        <button id="salvarVendedor" type="submit">
-          Salvar vendedor
-        </button>
-      </form>
-
-      <p id="mensagemCadastro"
-        role="status" aria-live="polite"></p>
-
-      <hr>
-
-      <h2>📋 Histórico de alterações</h2>
-      <p>
-        Consulte os últimos 100 registros de alterações
-        de vendedores e produtos.
-      </p>
-
-      <button id="consultarHistorico" type="button">
-        Consultar histórico de alterações
-      </button>
-
-      <p id="mensagemHistorico"
-        role="status" aria-live="polite"></p>
-
-      <div id="areaHistorico" hidden>
-        <div class="tabela-container">
-          <table>
-            <thead id="cabecalhoHistorico"></thead>
-            <tbody id="corpoHistorico"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <hr>
-
-      <button id="sair" class="secundario" type="button">
-        Sair
-      </button>
-    </section>
-
-    <p id="mensagem" role="status" aria-live="polite">
-      Verificando acesso...
+    <h2>📋 Histórico de alterações</h2>
+    <p>
+      Consulte os últimos 100 registros de vendedores
+      e produtos, organizados para facilitar a leitura.
     </p>
-  </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script>
-    const URL_SUPABASE =
-      "https://mublqamdknlkrhtzzwfj.supabase.co";
+    <button id="consultarHistorico" type="button">
+      Consultar histórico de alterações
+    </button>
 
-    const CHAVE_PUBLICA =
-      "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
+    <p id="mensagemHistorico"
+      role="status" aria-live="polite"></p>
 
-    const login = document.getElementById("login");
-    const painel = document.getElementById("painel");
-    const novaSenha = document.getElementById("novaSenha");
-    const mensagem = document.getElementById("mensagem");
-    const mensagemCadastro =
-      document.getElementById("mensagemCadastro");
-    const mensagemHistorico =
-      document.getElementById("mensagemHistorico");
-    const botaoSalvar =
-      document.getElementById("salvarVendedor");
-    const botaoHistorico =
-      document.getElementById("consultarHistorico");
-    const areaHistorico =
-      document.getElementById("areaHistorico");
+    <div id="areaHistorico" hidden></div>
 
-    let administradorAutorizado = false;
+    <p class="aviso">
+      Os registros são somente para consulta.
+      Nenhuma informação pode ser alterada nesta tela.
+    </p>
 
-    function avisar(texto) {
-      mensagem.textContent = texto;
-    }
+    <hr>
+    <button id="sair" class="secundario" type="button">
+      Sair
+    </button>
+  </section>
 
-    function limparHistorico() {
-      areaHistorico.hidden = true;
-      document.getElementById(
-        "cabecalhoHistorico"
-      ).replaceChildren();
-      document.getElementById(
-        "corpoHistorico"
-      ).replaceChildren();
-      mensagemHistorico.textContent = "";
-    }
+  <p id="mensagem" role="status" aria-live="polite">
+    Verificando acesso...
+  </p>
+</main>
 
-    function mostrar(secao) {
-      login.hidden = secao !== "login";
-      painel.hidden = secao !== "painel";
-      novaSenha.hidden = secao !== "novaSenha";
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const URL_SUPABASE =
+  "https://mublqamdknlkrhtzzwfj.supabase.co";
 
-      if (secao !== "painel") {
-        administradorAutorizado = false;
-        limparHistorico();
+const CHAVE_PUBLICA =
+  "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
+
+const $ = id => document.getElementById(id);
+
+const login = $("login");
+const painel = $("painel");
+const novaSenha = $("novaSenha");
+const mensagem = $("mensagem");
+const mensagemCadastro = $("mensagemCadastro");
+const mensagemHistorico = $("mensagemHistorico");
+const botaoSalvar = $("salvarVendedor");
+const botaoHistorico = $("consultarHistorico");
+const areaHistorico = $("areaHistorico");
+
+let administradorAutorizado = false;
+let consultaAtual = 0;
+
+function avisar(texto) {
+  mensagem.textContent = texto;
+}
+
+function limparHistorico() {
+  ++consultaAtual;
+  areaHistorico.hidden = true;
+  areaHistorico.replaceChildren();
+  mensagemHistorico.textContent = "";
+}
+
+function mostrar(secao) {
+  login.hidden = secao !== "login";
+  painel.hidden = secao !== "painel";
+  novaSenha.hidden = secao !== "novaSenha";
+
+  if (secao !== "painel") {
+    administradorAutorizado = false;
+    limparHistorico();
+  }
+}
+
+function normalizarTelefone(valor) {
+  let numero = valor.replace(/\D/g, "");
+
+  if (numero.startsWith("55") &&
+      numero.length > 11) {
+    numero = numero.substring(2);
+  }
+
+  if (!/^\d{10,11}$/.test(numero)) {
+    return null;
+  }
+
+  return numero;
+}
+
+/* Funções de apresentação do histórico */
+
+function objeto(valor) {
+  if (valor && typeof valor === "object" &&
+      !Array.isArray(valor)) {
+    return valor;
+  }
+
+  if (typeof valor === "string") {
+    try {
+      const convertido = JSON.parse(valor);
+      if (convertido && typeof convertido === "object" &&
+          !Array.isArray(convertido)) {
+        return convertido;
       }
+    } catch (_) {}
+  }
+
+  return null;
+}
+
+function buscarCampo(registro, nomes) {
+  for (const nome of nomes) {
+    if (Object.prototype.hasOwnProperty.call(
+      registro, nome
+    )) {
+      return registro[nome];
     }
+  }
+  return null;
+}
 
-    function normalizarTelefone(valor) {
-      let numero = valor.replace(/\D/g, "");
+function dadosAntes(registro) {
+  return objeto(buscarCampo(registro, [
+    "dados_anteriores",
+    "dados_antigos",
+    "dados_anterior",
+    "registro_anterior",
+    "old_data",
+    "old_record",
+    "antes",
+    "valor_anterior"
+  ]));
+}
 
-      if (numero.startsWith("55") &&
-          numero.length > 11) {
-        numero = numero.substring(2);
-      }
+function dadosDepois(registro) {
+  return objeto(buscarCampo(registro, [
+    "dados_novos",
+    "dados_novo",
+    "dados_atuais",
+    "registro_novo",
+    "new_data",
+    "new_record",
+    "depois",
+    "valor_novo"
+  ]));
+}
 
-      if (!/^\d{10,11}$/.test(numero)) {
-        return null;
-      }
+const nomesCampos = {
+  nome: "Nome",
+  preco: "Preço",
+  bairro: "Bairro",
+  endereco: "Endereço",
+  whatsapp: "WhatsApp principal",
+  whatsapp2: "Segundo WhatsApp",
+  disponivel: "Disponibilidade",
+  categoria: "Categoria",
+  descricao: "Descrição",
+  incluido: "Incluído",
+  foto_url: "Fotografia",
+  latitude: "Latitude",
+  longitude: "Longitude",
+  vendedor_id: "Código do vendedor",
+  user_id: "Conta vinculada",
+  created_at: "Data de cadastro",
+  updated_at: "Data de atualização"
+};
 
-      return numero;
+function nomeCampo(chave) {
+  return nomesCampos[chave] ||
+    chave.replace(/_/g, " ");
+}
+
+function textoValor(valor, campo = "") {
+  if (valor === null || valor === undefined ||
+      valor === "") {
+    return "Não informado";
+  }
+
+  if (typeof valor === "boolean") {
+    if (campo === "disponivel") {
+      return valor ? "Disponível" : "Indisponível";
     }
+    return valor ? "Sim" : "Não";
+  }
 
-    function formatarValor(valor) {
-      if (valor === null || valor === undefined) {
-        return "";
-      }
-
-      if (typeof valor === "object") {
-        return JSON.stringify(valor, null, 2);
-      }
-
-      return String(valor);
+  if (campo === "preco") {
+    const numero = Number(valor);
+    if (Number.isFinite(numero)) {
+      return numero.toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      });
     }
+  }
 
-    function exibirHistorico(registros) {
-      const cabecalho = document.getElementById(
-        "cabecalhoHistorico"
+  if (campo === "foto_url" &&
+      typeof valor === "string") {
+    return valor ? "Fotografia cadastrada" :
+      "Sem fotografia";
+  }
+
+  if (typeof valor === "object") {
+    return JSON.stringify(valor, null, 2);
+  }
+
+  return String(valor);
+}
+
+function formatarData(valor) {
+  if (!valor) return "Data não informada";
+
+  const data = new Date(valor);
+
+  if (Number.isNaN(data.getTime())) {
+    return String(valor);
+  }
+
+  return data.toLocaleString("pt-BR", {
+    timeZone: "America/Sao_Paulo",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+function elemento(tag, classe, texto) {
+  const el = document.createElement(tag);
+  if (classe) el.className = classe;
+  if (texto !== undefined) el.textContent = texto;
+  return el;
+}
+
+function tipoOperacao(registro) {
+  const bruto = String(buscarCampo(registro, [
+    "operacao", "acao", "tipo_operacao", "operation"
+  ]) || "").toUpperCase();
+
+  if (bruto === "INSERT") return "Novo cadastro";
+  if (bruto === "UPDATE") return "Alteração";
+  if (bruto === "DELETE") return "Exclusão";
+
+  return bruto || "Registro";
+}
+
+function identificarEntidade(registro, antes, depois) {
+  const tabela = String(buscarCampo(registro, [
+    "tabela", "nome_tabela", "table_name"
+  ]) || "").toLowerCase();
+
+  const dados = depois || antes || {};
+
+  const nome = dados.nome ||
+    buscarCampo(registro, ["nome", "nome_vendedor"]);
+
+  const classe = tabela.includes("produto")
+    ? "Produto"
+    : tabela.includes("vendedor")
+      ? "Vendedor"
+      : "Registro";
+
+  const titulo = nome
+    ? `${classe}: ${nome}`
+    : `${classe} ${dados.id ||
+        buscarCampo(registro, ["registro_id", "id_registro"])
+        || ""}`.trim();
+
+  return {
+    titulo,
+    tabela: tabela || "Tabela não identificada"
+  };
+}
+
+function mudancas(antes, depois) {
+  const anterior = antes || {};
+  const novo = depois || {};
+
+  const campos = [...new Set([
+    ...Object.keys(anterior),
+    ...Object.keys(novo)
+  ])];
+
+  const ignorar = new Set([
+    "id", "created_at", "updated_at"
+  ]);
+
+  return campos.filter(campo => {
+    if (ignorar.has(campo)) return false;
+
+    return JSON.stringify(anterior[campo]) !==
+      JSON.stringify(novo[campo]);
+  }).map(campo => ({
+    campo,
+    anterior: anterior[campo],
+    novo: novo[campo]
+  }));
+}
+
+function criarMudanca(mudanca, operacao) {
+  const caixa = elemento("div", "mudanca");
+  caixa.appendChild(
+    elemento("strong", "", nomeCampo(mudanca.campo))
+  );
+
+  const comparacao = elemento("div", "comparacao");
+
+  if (operacao !== "Novo cadastro") {
+    const antes = elemento("div", "valor");
+    antes.appendChild(
+      elemento("small", "", "Antes")
+    );
+    antes.appendChild(
+      elemento("span", "",
+        textoValor(mudanca.anterior, mudanca.campo))
+    );
+    comparacao.appendChild(antes);
+  }
+
+  if (operacao !== "Exclusão") {
+    const depois = elemento("div", "valor novo");
+    depois.appendChild(
+      elemento("small", "", "Depois")
+    );
+    depois.appendChild(
+      elemento("span", "",
+        textoValor(mudanca.novo, mudanca.campo))
+    );
+    comparacao.appendChild(depois);
+  }
+
+  caixa.appendChild(comparacao);
+  return caixa;
+}
+
+function criarRegistro(registro) {
+  const antes = dadosAntes(registro);
+  const depois = dadosDepois(registro);
+  const operacao = tipoOperacao(registro);
+  const entidade = identificarEntidade(
+    registro, antes, depois
+  );
+
+  const cartao = elemento("article", "registro");
+  const topo = elemento("div", "registro-topo");
+
+  const data = buscarCampo(registro, [
+    "created_at", "data_hora",
+    "alterado_em", "data_alteracao",
+    "data", "timestamp"
+  ]);
+
+  topo.appendChild(
+    elemento("span", "data", formatarData(data))
+  );
+  topo.appendChild(
+    elemento("span", "tipo", operacao)
+  );
+
+  cartao.appendChild(topo);
+  cartao.appendChild(
+    elemento("h3", "", entidade.titulo)
+  );
+
+  const identificacao = elemento(
+    "p", "subtitulo", entidade.tabela
+  );
+
+  const usuario = buscarCampo(registro, [
+    "usuario_id", "user_id", "alterado_por"
+  ]);
+
+  if (usuario) {
+    identificacao.textContent +=
+      " • Usuário: " + usuario;
+  }
+
+  cartao.appendChild(identificacao);
+
+  let alteracoes = [];
+
+  if (operacao === "Novo cadastro") {
+    alteracoes = mudancas(null, depois);
+  } else if (operacao === "Exclusão") {
+    alteracoes = mudancas(antes, null);
+  } else {
+    alteracoes = mudancas(antes, depois);
+  }
+
+  if (alteracoes.length) {
+    alteracoes.forEach(mudanca => {
+      cartao.appendChild(
+        criarMudanca(mudanca, operacao)
       );
-      const corpo = document.getElementById(
-        "corpoHistorico"
+    });
+  } else {
+    cartao.appendChild(
+      elemento(
+        "p",
+        "subtitulo",
+        "Os campos modificados não puderam ser " +
+        "identificados automaticamente. " +
+        "Consulte os detalhes abaixo."
+      )
+    );
+  }
+
+  const detalhes = document.createElement("details");
+  detalhes.appendChild(
+    elemento("summary", "", "Ver detalhes do registro")
+  );
+
+  const pre = elemento("pre");
+  pre.textContent = JSON.stringify(
+    registro, null, 2
+  );
+
+  detalhes.appendChild(pre);
+  cartao.appendChild(detalhes);
+
+  return cartao;
+}
+
+function exibirHistorico(registros) {
+  areaHistorico.replaceChildren();
+
+  if (!registros.length) {
+    mensagemHistorico.textContent =
+      "Nenhuma alteração encontrada.";
+    areaHistorico.hidden = true;
+    return;
+  }
+
+  registros.forEach(registro => {
+    areaHistorico.appendChild(
+      criarRegistro(registro)
+    );
+  });
+
+  areaHistorico.hidden = false;
+  mensagemHistorico.textContent =
+    registros.length +
+    " registro(s) encontrado(s).";
+}
+
+/* Autenticação e funções administrativas existentes */
+
+if (!window.supabase) {
+  mostrar("login");
+  avisar(
+    "Não foi possível carregar a conexão. " +
+    "Atualize a página."
+  );
+} else {
+  const db = window.supabase.createClient(
+    URL_SUPABASE,
+    CHAVE_PUBLICA
+  );
+
+  const parametros =
+    new URLSearchParams(window.location.search);
+
+  const fragmento =
+    new URLSearchParams(
+      window.location.hash.substring(1)
+    );
+
+  const retornoRecuperacao =
+    parametros.get("type") === "recovery" ||
+    fragmento.get("type") === "recovery" ||
+    parametros.has("token_hash");
+
+  let recuperacaoAtiva = retornoRecuperacao;
+  let verificacao = 0;
+
+  async function verificarAdmin() {
+    const minhaVerificacao = ++verificacao;
+
+    const { data, error } = await db.auth.getUser();
+
+    if (minhaVerificacao !== verificacao ||
+        recuperacaoAtiva) return;
+
+    if (error || !data.user) {
+      mostrar("login");
+      return;
+    }
+
+    if (data.user.app_metadata?.role !== "admin") {
+      await db.auth.signOut();
+
+      if (recuperacaoAtiva) return;
+
+      mostrar("login");
+      avisar(
+        "Esta conta não possui autorização administrativa."
       );
+      return;
+    }
 
-      cabecalho.replaceChildren();
-      corpo.replaceChildren();
+    administradorAutorizado = true;
+    mostrar("painel");
+    avisar("Administrador autenticado.");
+  }
 
-      if (!registros.length) {
-        mensagemHistorico.textContent =
-          "Nenhuma alteração encontrada.";
-        areaHistorico.hidden = true;
+  db.auth.onAuthStateChange(evento => {
+    if (evento === "PASSWORD_RECOVERY") {
+      recuperacaoAtiva = true;
+      ++verificacao;
+      mostrar("novaSenha");
+      avisar(
+        "Escolha uma nova senha com pelo menos 12 caracteres."
+      );
+    } else if (evento === "SIGNED_OUT") {
+      ++verificacao;
+      mostrar("login");
+    }
+  });
+
+  $("formLogin").addEventListener(
+    "submit", async evento => {
+      evento.preventDefault();
+      avisar("Verificando acesso...");
+
+      const email = $("email").value.trim();
+      const password = $("senha").value;
+
+      const { error } =
+        await db.auth.signInWithPassword({
+          email, password
+        });
+
+      $("senha").value = "";
+
+      if (error) {
+        avisar(
+          "Não foi possível entrar. Confira e-mail e senha."
+        );
         return;
       }
 
-      const colunas = [
-        ...new Set(
-          registros.flatMap(registro =>
-            Object.keys(registro)
-          )
-        )
-      ];
-
-      const linhaCabecalho =
-        document.createElement("tr");
-
-      colunas.forEach(coluna => {
-        const th = document.createElement("th");
-        th.textContent = coluna.replace(/_/g, " ");
-        linhaCabecalho.appendChild(th);
-      });
-
-      cabecalho.appendChild(linhaCabecalho);
-
-      registros.forEach(registro => {
-        const linha = document.createElement("tr");
-
-        colunas.forEach(coluna => {
-          const td = document.createElement("td");
-          const valor = registro[coluna];
-
-          td.textContent = formatarValor(valor);
-
-          if (typeof valor === "object" &&
-              valor !== null) {
-            td.className = "dados";
-          }
-
-          linha.appendChild(td);
-        });
-
-        corpo.appendChild(linha);
-      });
-
-      areaHistorico.hidden = false;
-      mensagemHistorico.textContent =
-        registros.length +
-        " registro(s) encontrado(s).";
+      await verificarAdmin();
     }
+  );
 
-    if (!window.supabase) {
-      mostrar("login");
-      avisar(
-        "Não foi possível carregar a conexão. " +
-        "Atualize a página."
-      );
-    } else {
-      const db = window.supabase.createClient(
-        URL_SUPABASE,
-        CHAVE_PUBLICA
-      );
+  $("recuperar").addEventListener(
+    "click", async () => {
+      const email = $("email").value.trim();
 
-      const parametros =
-        new URLSearchParams(window.location.search);
+      if (!email) {
+        avisar(
+          "Digite seu e-mail antes de recuperar a senha."
+        );
+        return;
+      }
 
-      const fragmento =
-        new URLSearchParams(
-          window.location.hash.substring(1)
+      avisar("Solicitando recuperação...");
+
+      const redirectTo = new URL(
+        "admin.html", window.location.href
+      ).href;
+
+      const { error } =
+        await db.auth.resetPasswordForEmail(
+          email, { redirectTo }
         );
 
-      const retornoRecuperacao =
-        parametros.get("type") === "recovery" ||
-        fragmento.get("type") === "recovery" ||
-        parametros.has("token_hash");
+      avisar(error
+        ? "Não foi possível solicitar a recuperação."
+        : "Se o e-mail estiver cadastrado, " +
+          "você receberá instruções."
+      );
+    }
+  );
 
-      let recuperacaoAtiva = retornoRecuperacao;
-      let verificacao = 0;
+  $("formSenha").addEventListener(
+    "submit", async evento => {
+      evento.preventDefault();
 
-      async function verificarAdmin() {
-        const minhaVerificacao = ++verificacao;
-
-        const { data, error } =
-          await db.auth.getUser();
-
-        if (minhaVerificacao !== verificacao ||
-            recuperacaoAtiva) {
-          return;
-        }
-
-        if (error || !data.user) {
-          mostrar("login");
-          return;
-        }
-
-        if (data.user.app_metadata?.role !== "admin") {
-          await db.auth.signOut();
-
-          if (recuperacaoAtiva) return;
-
-          mostrar("login");
-          avisar(
-            "Esta conta não possui autorização administrativa."
-          );
-          return;
-        }
-
-        administradorAutorizado = true;
-        mostrar("painel");
-        avisar("Administrador autenticado.");
+      if (!recuperacaoAtiva) {
+        avisar(
+          "Solicite um novo link de recuperação de senha."
+        );
+        return;
       }
 
-      db.auth.onAuthStateChange((evento) => {
-        if (evento === "PASSWORD_RECOVERY") {
-          recuperacaoAtiva = true;
-          ++verificacao;
-          mostrar("novaSenha");
-          avisar(
-            "Escolha uma nova senha com pelo menos " +
-            "12 caracteres."
-          );
-        } else if (evento === "SIGNED_OUT") {
-          ++verificacao;
-          mostrar("login");
-        }
-      });
+      const password = $("senhaNova").value;
+      avisar("Salvando nova senha...");
 
-      document.getElementById("formLogin")
-        .addEventListener("submit", async (evento) => {
-          evento.preventDefault();
-          avisar("Verificando acesso...");
+      const { error } =
+        await db.auth.updateUser({ password });
 
-          const email = document.getElementById(
-            "email"
-          ).value.trim();
+      $("senhaNova").value = "";
 
-          const password = document.getElementById(
-            "senha"
-          ).value;
+      if (error) {
+        avisar(
+          "Não foi possível salvar a nova senha. " +
+          "Solicite outro link se necessário."
+        );
+        return;
+      }
 
-          const { error } =
-            await db.auth.signInWithPassword({
-              email,
-              password
-            });
+      recuperacaoAtiva = false;
+      ++verificacao;
 
-          document.getElementById(
-            "senha"
-          ).value = "";
-
-          if (error) {
-            avisar(
-              "Não foi possível entrar. " +
-              "Confira e-mail e senha."
-            );
-            return;
-          }
-
-          await verificarAdmin();
-        });
-
-      document.getElementById("recuperar")
-        .addEventListener("click", async () => {
-          const email = document.getElementById(
-            "email"
-          ).value.trim();
-
-          if (!email) {
-            avisar(
-              "Digite seu e-mail antes de " +
-              "recuperar a senha."
-            );
-            return;
-          }
-
-          avisar("Solicitando recuperação...");
-
-          const redirectTo = new URL(
-            "admin.html",
-            window.location.href
-          ).href;
-
-          const { error } =
-            await db.auth.resetPasswordForEmail(
-              email,
-              { redirectTo }
-            );
-
-          avisar(
-            error
-              ? "Não foi possível solicitar a recuperação."
-              : "Se o e-mail estiver cadastrado, " +
-                "você receberá instruções."
-          );
-        });
-
-      document.getElementById("formSenha")
-        .addEventListener("submit", async (evento) => {
-          evento.preventDefault();
-
-          if (!recuperacaoAtiva) {
-            avisar(
-              "Solicite um novo link de " +
-              "recuperação de senha."
-            );
-            return;
-          }
-
-          const password = document.getElementById(
-            "senhaNova"
-          ).value;
-
-          avisar("Salvando nova senha...");
-
-          const { error } =
-            await db.auth.updateUser({ password });
-
-          document.getElementById(
-            "senhaNova"
-          ).value = "";
-
-          if (error) {
-            avisar(
-              "Não foi possível salvar a nova senha. " +
-              "Solicite outro link se necessário."
-            );
-            return;
-          }
-
-          recuperacaoAtiva = false;
-          ++verificacao;
-
-          history.replaceState(
-            null,
-            "",
-            window.location.pathname
-          );
-
-          avisar(
-            "Senha atualizada. Verificando autorização..."
-          );
-
-          await verificarAdmin();
-        });
-
-      document.getElementById("formVendedor")
-        .addEventListener("submit", async (evento) => {
-          evento.preventDefault();
-
-          if (!administradorAutorizado) {
-            mensagemCadastro.textContent =
-              "Acesso administrativo não autorizado.";
-            return;
-          }
-
-          const nome = document.getElementById(
-            "nomeVendedor"
-          ).value.trim();
-
-          const bairro = document.getElementById(
-            "bairroVendedor"
-          ).value.trim();
-
-          const endereco = document.getElementById(
-            "enderecoVendedor"
-          ).value.trim();
-
-          const preco = Number(
-            document.getElementById(
-              "precoVendedor"
-            ).value
-          );
-
-          const whatsapp = normalizarTelefone(
-            document.getElementById(
-              "whatsappVendedor"
-            ).value
-          );
-
-          const segundoValor =
-            document.getElementById(
-              "whatsapp2Vendedor"
-            ).value.trim();
-
-          const whatsapp2 = segundoValor
-            ? normalizarTelefone(segundoValor)
-            : null;
-
-          if (!nome || !bairro || !endereco ||
-              !Number.isFinite(preco) || preco <= 0) {
-            mensagemCadastro.textContent =
-              "Preencha corretamente os dados do vendedor.";
-            return;
-          }
-
-          if (!whatsapp ||
-              (segundoValor && !whatsapp2)) {
-            mensagemCadastro.textContent =
-              "Informe um WhatsApp válido com DDD.";
-            return;
-          }
-
-          if (whatsapp2 && whatsapp2 === whatsapp) {
-            mensagemCadastro.textContent =
-              "O segundo WhatsApp deve ser diferente do primeiro.";
-            return;
-          }
-
-          botaoSalvar.disabled = true;
-          mensagemCadastro.textContent =
-            "Salvando vendedor...";
-
-          try {
-            const {
-              data: usuario,
-              error: erroUsuario
-            } = await db.auth.getUser();
-
-            if (erroUsuario || !usuario.user ||
-                usuario.user.app_metadata?.role !== "admin") {
-              administradorAutorizado = false;
-              mostrar("login");
-              mensagemCadastro.textContent =
-                "Sua autorização precisa ser " +
-                "verificada novamente.";
-              return;
-            }
-
-            const { error } =
-              await db.from("vendedores").insert({
-                nome,
-                bairro,
-                preco,
-                endereco,
-                whatsapp,
-                whatsapp2
-              });
-
-            if (error) {
-              console.error(
-                "Erro ao cadastrar vendedor:",
-                error
-              );
-
-              mensagemCadastro.textContent =
-                "Não foi possível salvar. Confira " +
-                "as permissões e os dados no Supabase.";
-              return;
-            }
-
-            document.getElementById(
-              "formVendedor"
-            ).reset();
-
-            mensagemCadastro.textContent =
-              "Vendedor cadastrado com sucesso!";
-          } catch (erro) {
-            console.error("Falha de conexão:", erro);
-
-            mensagemCadastro.textContent =
-              "Falha de conexão. Verifique a " +
-              "internet e tente novamente.";
-          } finally {
-            botaoSalvar.disabled = false;
-          }
-        });
-
-      botaoHistorico.addEventListener(
-        "click",
-        async () => {
-          if (!administradorAutorizado) {
-            mensagemHistorico.textContent =
-              "Acesso administrativo não autorizado.";
-            return;
-          }
-
-          botaoHistorico.disabled = true;
-          limparHistorico();
-          mensagemHistorico.textContent =
-            "Consultando histórico...";
-
-          try {
-            const {
-              data: usuario,
-              error: erroUsuario
-            } = await db.auth.getUser();
-
-            if (erroUsuario || !usuario.user ||
-                usuario.user.app_metadata?.role !== "admin") {
-              mostrar("login");
-              avisar(
-                "Sua autorização precisa ser " +
-                "verificada novamente."
-              );
-              return;
-            }
-
-            const { data, error } =
-              await db.rpc(
-                "consultar_historico_admin"
-              );
-
-            if (error) {
-              console.error(
-                "Erro ao consultar histórico:",
-                error
-              );
-
-              mensagemHistorico.textContent =
-                "Não foi possível consultar o " +
-                "histórico. Verifique as " +
-                "permissões no Supabase.";
-              return;
-            }
-
-            if (!administradorAutorizado) return;
-
-            exibirHistorico(data || []);
-          } catch (erro) {
-            console.error(
-              "Falha ao consultar histórico:",
-              erro
-            );
-
-            mensagemHistorico.textContent =
-              "Falha de conexão ao consultar " +
-              "o histórico.";
-          } finally {
-            botaoHistorico.disabled = false;
-          }
-        }
+      history.replaceState(
+        null, "", window.location.pathname
       );
 
-      document.getElementById("sair")
-        .addEventListener("click", async () => {
-          recuperacaoAtiva = false;
-          ++verificacao;
+      avisar(
+        "Senha atualizada. Verificando autorização..."
+      );
+
+      await verificarAdmin();
+    }
+  );
+
+  $("formVendedor").addEventListener(
+    "submit", async evento => {
+      evento.preventDefault();
+
+      if (!administradorAutorizado) {
+        mensagemCadastro.textContent =
+          "Acesso administrativo não autorizado.";
+        return;
+      }
+
+      const nome = $("nomeVendedor").value.trim();
+      const bairro = $("bairroVendedor").value.trim();
+      const endereco =
+        $("enderecoVendedor").value.trim();
+      const preco = Number($("precoVendedor").value);
+
+      const whatsapp = normalizarTelefone(
+        $("whatsappVendedor").value
+      );
+
+      const segundoValor =
+        $("whatsapp2Vendedor").value.trim();
+
+      const whatsapp2 = segundoValor
+        ? normalizarTelefone(segundoValor)
+        : null;
+
+      if (!nome || !bairro || !endereco ||
+          !Number.isFinite(preco) || preco <= 0) {
+        mensagemCadastro.textContent =
+          "Preencha corretamente os dados do vendedor.";
+        return;
+      }
+
+      if (!whatsapp ||
+          (segundoValor && !whatsapp2)) {
+        mensagemCadastro.textContent =
+          "Informe um WhatsApp válido com DDD.";
+        return;
+      }
+
+      if (whatsapp2 && whatsapp2 === whatsapp) {
+        mensagemCadastro.textContent =
+          "O segundo WhatsApp deve ser diferente do primeiro.";
+        return;
+      }
+
+      botaoSalvar.disabled = true;
+      mensagemCadastro.textContent =
+        "Salvando vendedor...";
+
+      try {
+        const {
+          data: usuario,
+          error: erroUsuario
+        } = await db.auth.getUser();
+
+        if (erroUsuario || !usuario.user ||
+            usuario.user.app_metadata?.role !== "admin") {
           administradorAutorizado = false;
-
-          await db.auth.signOut();
-
           mostrar("login");
-          avisar(
-            "Você saiu da Área Administrativa."
-          );
-        });
-
-      async function iniciar() {
-        if (retornoRecuperacao) {
-          mostrar("novaSenha");
-          avisar("Validando link de recuperação...");
-        }
-
-        const { data, error } =
-          await db.auth.getSession();
-
-        if (recuperacaoAtiva) {
-          if (error || !data.session) {
-            mostrar("login");
-            recuperacaoAtiva = false;
-
-            avisar(
-              "O link de recuperação não foi " +
-              "validado. Solicite um novo link."
-            );
-          } else {
-            mostrar("novaSenha");
-
-            avisar(
-              "Escolha uma nova senha com pelo " +
-              "menos 12 caracteres."
-            );
-          }
-
+          mensagemCadastro.textContent =
+            "Sua autorização precisa ser " +
+            "verificada novamente.";
           return;
         }
 
-        await verificarAdmin();
+        const { error } =
+          await db.from("vendedores").insert({
+            nome,
+            bairro,
+            preco,
+            endereco,
+            whatsapp,
+            whatsapp2
+          });
+
+        if (error) {
+          console.error(
+            "Erro ao cadastrar vendedor:", error
+          );
+
+          mensagemCadastro.textContent =
+            "Não foi possível salvar. Confira " +
+            "as permissões e os dados no Supabase.";
+          return;
+        }
+
+        $("formVendedor").reset();
+        mensagemCadastro.textContent =
+          "Vendedor cadastrado com sucesso!";
+      } catch (erro) {
+        console.error("Falha de conexão:", erro);
+        mensagemCadastro.textContent =
+          "Falha de conexão. Verifique a internet " +
+          "e tente novamente.";
+      } finally {
+        botaoSalvar.disabled = false;
+      }
+    }
+  );
+
+  botaoHistorico.addEventListener(
+    "click", async () => {
+      if (!administradorAutorizado) {
+        mensagemHistorico.textContent =
+          "Acesso administrativo não autorizado.";
+        return;
       }
 
-      iniciar();
+      botaoHistorico.disabled = true;
+      limparHistorico();
+
+      const minhaConsulta = consultaAtual;
+
+      mensagemHistorico.textContent =
+        "Consultando histórico...";
+
+      try {
+        const {
+          data: usuario,
+          error: erroUsuario
+        } = await db.auth.getUser();
+
+        if (minhaConsulta !== consultaAtual) return;
+
+        if (erroUsuario || !usuario.user ||
+            usuario.user.app_metadata?.role !== "admin") {
+          mostrar("login");
+          avisar(
+            "Sua autorização precisa ser " +
+            "verificada novamente."
+          );
+          return;
+        }
+
+        const { data, error } =
+          await db.rpc("consultar_historico_admin");
+
+        if (minhaConsulta !== consultaAtual ||
+            !administradorAutorizado) return;
+
+        if (error) {
+          console.error(
+            "Erro ao consultar histórico:", error
+          );
+
+          mensagemHistorico.textContent =
+            "Não foi possível consultar o histórico. " +
+            "Verifique as permissões no Supabase.";
+          return;
+        }
+
+        exibirHistorico(data || []);
+      } catch (erro) {
+        console.error(
+          "Falha ao consultar histórico:", erro
+        );
+
+        if (minhaConsulta === consultaAtual) {
+          mensagemHistorico.textContent =
+            "Falha de conexão ao consultar o histórico.";
+        }
+      } finally {
+        botaoHistorico.disabled = false;
+      }
     }
-  </script>
+  );
+
+  $("sair").addEventListener(
+    "click", async () => {
+      recuperacaoAtiva = false;
+      ++verificacao;
+      administradorAutorizado = false;
+      limparHistorico();
+
+      await db.auth.signOut();
+
+      mostrar("login");
+      avisar("Você saiu da Área Administrativa.");
+    }
+  );
+
+  async function iniciar() {
+    if (retornoRecuperacao) {
+      mostrar("novaSenha");
+      avisar("Validando link de recuperação...");
+    }
+
+    const { data, error } =
+      await db.auth.getSession();
+
+    if (recuperacaoAtiva) {
+      if (error || !data.session) {
+        mostrar("login");
+        recuperacaoAtiva = false;
+        avisar(
+          "O link de recuperação não foi validado. " +
+          "Solicite um novo link."
+        );
+      } else {
+        mostrar("novaSenha");
+        avisar(
+          "Escolha uma nova senha com pelo " +
+          "menos 12 caracteres."
+        );
+      }
+      return;
+    }
+
+    await verificarAdmin();
+  }
+
+  iniciar();
+}
+</script>
 </body>
 </html>
