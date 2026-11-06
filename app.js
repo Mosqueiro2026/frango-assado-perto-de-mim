@@ -547,6 +547,133 @@ function renderizarProdutos(vendedor) {
   `;
 }
 
+/* =========================================
+   BUSCA DINÂMICA POR BAIRRO
+   ========================================= */
+
+const campoBuscaBairro =
+  document.getElementById("campoBuscaBairro");
+
+const botaoBuscarBairro =
+  document.getElementById("botaoBuscarBairro");
+
+const bairrosDisponiveis =
+  document.getElementById("bairrosDisponiveis");
+
+const mensagemBuscaBairro =
+  document.getElementById("mensagemBuscaBairro");
+
+function normalizarNomeBairro(valor) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("pt-BR");
+}
+
+function atualizarBairrosDisponiveis() {
+  if (!bairrosDisponiveis) return;
+
+  const bairros = [...new Set(
+    vendedores
+      .map(vendedor => String(vendedor.bairro || "").trim())
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  bairrosDisponiveis.replaceChildren();
+
+  bairros.forEach(bairro => {
+    const opcao = document.createElement("option");
+    opcao.value = bairro;
+    bairrosDisponiveis.appendChild(opcao);
+  });
+}
+
+function pesquisarBairro() {
+  if (!campoBuscaBairro) return;
+
+  const pesquisa = normalizarNomeBairro(
+    campoBuscaBairro.value
+  );
+
+  if (!pesquisa) {
+    mensagemBuscaBairro.textContent =
+      "Digite o nome de um bairro para pesquisar.";
+    campoBuscaBairro.focus();
+    return;
+  }
+
+  const encontrados = vendedores.filter(vendedor =>
+    normalizarNomeBairro(vendedor.bairro).includes(pesquisa)
+  );
+
+  if (!encontrados.length) {
+    mensagemBuscaBairro.textContent =
+      "Ainda não encontramos vendedores nesse bairro.";
+    lista.innerHTML =
+      "<p>Nenhum vendedor encontrado para essa pesquisa.</p>";
+    return;
+  }
+
+  buscaPorProximidade = false;
+  localizacaoCliente = null;
+  bairroSelecionado = "Todos";
+
+  const botaoLimpar =
+    document.getElementById("botaoLimparProximidade");
+
+  if (botaoLimpar) botaoLimpar.hidden = true;
+
+  const mensagemProximidade =
+    document.getElementById("mensagemProximidade");
+
+  if (mensagemProximidade) {
+    mensagemProximidade.textContent = "";
+  }
+
+  mensagemBuscaBairro.textContent =
+    `${encontrados.length} vendedor(es) encontrado(s).`;
+
+  // Mantém a apresentação original dos produtos,
+  // preços, fotos, contatos e avaliações.
+  const vendedoresOriginais = vendedores;
+
+  try {
+    vendedores = encontrados;
+    renderizar();
+  } finally {
+    vendedores = vendedoresOriginais;
+  }
+}
+
+if (botaoBuscarBairro && campoBuscaBairro) {
+  botaoBuscarBairro.addEventListener(
+    "click",
+    pesquisarBairro
+  );
+
+  campoBuscaBairro.addEventListener(
+    "keydown",
+    evento => {
+      if (evento.key === "Enter") {
+        evento.preventDefault();
+        pesquisarBairro();
+      }
+    }
+  );
+}
+
+// Atualiza as sugestões quando o catálogo
+// terminar de carregar.
+const carregarVendedoresOriginal = carregarVendedores;
+
+carregarVendedores = async function () {
+  await carregarVendedoresOriginal();
+  atualizarBairrosDisponiveis();
+};
+
+
 function renderizar() {
   let filtrados = vendedores.filter(
     vendedor =>
