@@ -1,26 +1,30 @@
 
-/* Catálogo público — Frango Assado Perto de Mim.
-   Somente leitura; sem funções administrativas.
-   Inclui fotografias e exibição de avaliações.
-   O envio de notas será adicionado depois. */
+/* Frango Assado Perto de Mim
+   Catálogo público, fotografias e avaliações.
+   Administração e vendedores permanecem separados.
+*/
 
-const SUPABASE_URL = "https://mublqamdknlkrhtzzwfj.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
+const SUPABASE_URL =
+  "https://mublqamdknlkrhtzzwfj.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
 
 const lista = document.getElementById("listaVendedores");
+
 let vendedores = [];
 let produtos = [];
 let avaliacoes = [];
 let bairroSelecionado = "Todos";
 
 function textoSeguro(valor) {
-  return String(valor ?? "").replace(/[&<>"']/g, c => ({
+  return String(valor ?? "").replace(/[&<>"']/g, caractere => ({
     "&": "&amp;",
     "<": "&lt;",
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;"
-  })[c]);
+  }[caractere]));
 }
 
 function formatarPreco(valor) {
@@ -50,27 +54,34 @@ function normalizarTelefone(valor) {
 
 function criarContato(valor, identificacao) {
   const telefone = normalizarTelefone(valor);
+
   if (!telefone) return "";
 
   return `
     <div class="contato-vendedor">
-      <p><strong>${textoSeguro(identificacao)}:</strong>
-        ${textoSeguro(telefone)}</p>
+      <p>
+        <strong>${textoSeguro(identificacao)}:</strong>
+        ${textoSeguro(telefone)}
+      </p>
       <p>
         <a href="https://wa.me/55${telefone}"
-           target="_blank" rel="noopener noreferrer">
+           target="_blank"
+           rel="noopener noreferrer">
           💬 WhatsApp
         </a>
         &nbsp; | &nbsp;
-        <a href="tel:+55${telefone}">📞 Ligar</a>
+        <a href="tel:+55${telefone}">
+          📞 Ligar
+        </a>
       </p>
     </div>
   `;
 }
 
 function criarPedido(produto, vendedor) {
-  const telefone = normalizarTelefone(vendedor.whatsapp)
-    || normalizarTelefone(vendedor.whatsapp2);
+  const telefone =
+    normalizarTelefone(vendedor.whatsapp) ||
+    normalizarTelefone(vendedor.whatsapp2);
 
   if (!telefone) return "";
 
@@ -81,7 +92,8 @@ function criarPedido(produto, vendedor) {
 
   return `
     <a href="https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}"
-       target="_blank" rel="noopener noreferrer">
+       target="_blank"
+       rel="noopener noreferrer">
       💬 Pedir pelo WhatsApp
     </a>
   `;
@@ -140,18 +152,20 @@ function criarFoto(produto) {
 
 function mostrarAvaliacao(produtoId) {
   const notas = avaliacoes.filter(
-    a => String(a.produto_id) === String(produtoId)
+    avaliacao =>
+      String(avaliacao.produto_id) === String(produtoId)
   );
 
   if (!notas.length) {
     return '<p class="observacao">⭐ Ainda sem avaliações</p>';
   }
 
-  const media = notas.reduce(
-    (soma, a) => soma + Number(a.nota), 0
-  ) / notas.length;
+  const media =
+    notas.reduce((soma, avaliacao) =>
+      soma + Number(avaliacao.nota), 0) / notas.length;
 
   const quantidadeEstrelas = Math.round(media);
+
   const estrelas =
     "★".repeat(quantidadeEstrelas) +
     "☆".repeat(5 - quantidadeEstrelas);
@@ -163,16 +177,46 @@ function mostrarAvaliacao(produtoId) {
 
   return `
     <p aria-label="Avaliação média ${mediaFormatada} de 5">
-      ⭐ ${estrelas} ${mediaFormatada}/5
+      ⭐ ${estrelas}
+      ${mediaFormatada}/5
       (${notas.length}
       ${notas.length === 1 ? "avaliação" : "avaliações"})
     </p>
   `;
 }
 
+function criarBotoesAvaliacao(produto) {
+  return `
+    <div class="avaliacao-produto">
+      <p><strong>Dê sua nota:</strong></p>
+
+      <div role="group"
+           aria-label="Avaliar ${textoSeguro(produto.nome || "produto")}">
+        ${[1, 2, 3, 4, 5].map(nota => `
+          <button
+            type="button"
+            class="botao-estrela"
+            data-avaliar-produto="${produto.id}"
+            data-nota="${nota}"
+            aria-label="Avaliar com ${nota} estrelas"
+            title="${nota} estrela${nota > 1 ? "s" : ""}"
+            style="font-size:24px;cursor:pointer;">
+            ★
+          </button>
+        `).join("")}
+      </div>
+
+      <p class="observacao">
+        Entre na sua conta para registrar sua avaliação.
+      </p>
+    </div>
+  `;
+}
+
 function renderizarProdutos(vendedor) {
   const itens = produtos.filter(
-    p => String(p.vendedor_id) === String(vendedor.id)
+    produto =>
+      String(produto.vendedor_id) === String(vendedor.id)
   );
 
   if (!itens.length) {
@@ -187,33 +231,40 @@ function renderizarProdutos(vendedor) {
   return `
     <div class="catalogo-produtos">
       <h4>Cardápio</h4>
-      ${itens.map(p => `
+
+      ${itens.map(produto => `
         <div class="produto-card"
              style="border:1px solid #e7e5e4;
                     border-radius:10px;
                     padding:12px;margin:12px 0;">
-          ${criarFoto(p)}
-          <div class="produto-detalhes">
-            <strong>${textoSeguro(p.nome || "Produto")}</strong>
 
-            ${p.descricao
-              ? `<p>${textoSeguro(p.descricao)}</p>`
+          ${criarFoto(produto)}
+
+          <div class="produto-detalhes">
+            <strong>
+              ${textoSeguro(produto.nome || "Produto")}
+            </strong>
+
+            ${produto.descricao
+              ? `<p>${textoSeguro(produto.descricao)}</p>`
               : ""}
 
             <p>
-              <strong>${formatarPreco(p.preco)}</strong>
+              <strong>${formatarPreco(produto.preco)}</strong>
             </p>
 
-            ${mostrarAvaliacao(p.id)}
+            ${mostrarAvaliacao(produto.id)}
+
+            ${criarBotoesAvaliacao(produto)}
 
             <p>
-              ${p.disponivel === true
+              ${produto.disponivel === true
                 ? "Disponível"
                 : "Indisponível"}
             </p>
 
-            ${p.disponivel === true
-              ? criarPedido(p, vendedor)
+            ${produto.disponivel === true
+              ? criarPedido(produto, vendedor)
               : ""}
           </div>
         </div>
@@ -223,9 +274,10 @@ function renderizarProdutos(vendedor) {
 }
 
 function renderizar() {
-  const filtrados = vendedores.filter(v =>
-    bairroSelecionado === "Todos" ||
-    v.bairro === bairroSelecionado
+  const filtrados = vendedores.filter(
+    vendedor =>
+      bairroSelecionado === "Todos" ||
+      vendedor.bairro === bairroSelecionado
   );
 
   if (!filtrados.length) {
@@ -234,29 +286,31 @@ function renderizar() {
     return;
   }
 
-  lista.innerHTML = filtrados.map(v => `
+  lista.innerHTML = filtrados.map(vendedor => `
     <article class="vendedor-card">
-      <h3>${textoSeguro(v.nome || "Vendedor")}</h3>
+
+      <h3>${textoSeguro(vendedor.nome || "Vendedor")}</h3>
 
       <p>
         <strong>Bairro:</strong>
-        ${textoSeguro(v.bairro || "A confirmar")}
+        ${textoSeguro(vendedor.bairro || "A confirmar")}
       </p>
 
       <p>
         <strong>Endereço:</strong>
-        ${textoSeguro(v.endereco || "A confirmar")}
+        ${textoSeguro(vendedor.endereco || "A confirmar")}
       </p>
 
-      ${renderizarProdutos(v)}
+      ${renderizarProdutos(vendedor)}
 
-      ${criarContato(v.whatsapp, "Contato 1")}
-      ${criarContato(v.whatsapp2, "Contato 2")}
+      ${criarContato(vendedor.whatsapp, "Contato 1")}
+      ${criarContato(vendedor.whatsapp2, "Contato 2")}
 
       <p class="observacao">
         Confirme preços, horários e disponibilidade
         diretamente com o vendedor.
       </p>
+
     </article>
   `).join("");
 }
@@ -282,7 +336,7 @@ async function consultarTabela(tabela, parametros) {
   const dados = await resposta.json();
 
   if (!Array.isArray(dados)) {
-    throw new Error("Resposta inesperada");
+    throw new Error("Resposta inesperada.");
   }
 
   return dados;
@@ -295,12 +349,14 @@ async function carregarVendedores() {
   try {
     const dadosVendedores = await consultarTabela(
       "vendedores",
-      "select=id,nome,bairro,endereco,whatsapp,whatsapp2&ativo=eq.true&order=nome.asc"
+      "select=id,nome,bairro,endereco,whatsapp,whatsapp2" +
+      "&ativo=eq.true&order=nome.asc"
     );
 
     const dadosProdutos = await consultarTabela(
       "produtos",
-      "select=id,vendedor_id,nome,descricao,categoria,preco,disponivel,foto_url&order=id.asc"
+      "select=id,vendedor_id,nome,descricao,categoria," +
+      "preco,disponivel,foto_url&order=id.asc"
     );
 
     let dadosAvaliacoes = [];
@@ -318,16 +374,22 @@ async function carregarVendedores() {
     }
 
     vendedores = dadosVendedores;
-    produtos = dadosProdutos;
+
+    const vendedoresAtivos = new Set(
+      dadosVendedores.map(vendedor => String(vendedor.id))
+    );
+
+    produtos = dadosProdutos.filter(
+      produto =>
+        vendedoresAtivos.has(String(produto.vendedor_id))
+    );
+
     avaliacoes = dadosAvaliacoes;
 
     renderizar();
 
   } catch (erro) {
-    console.error(
-      "Falha ao carregar catálogo:",
-      erro
-    );
+    console.error("Falha ao carregar catálogo:", erro);
 
     lista.innerHTML = `
       <p>
@@ -349,6 +411,45 @@ document.querySelectorAll("[data-bairro]").forEach(botao => {
     bairroSelecionado = botao.dataset.bairro;
     renderizar();
   });
+});
+
+lista.addEventListener("click", async evento => {
+  const botao = evento.target.closest(
+    "[data-avaliar-produto]"
+  );
+
+  if (!botao || botao.disabled) return;
+
+  const produtoId = Number(
+    botao.dataset.avaliarProduto
+  );
+
+  const nota = Number(botao.dataset.nota);
+
+  const botoes = lista.querySelectorAll(
+    `[data-avaliar-produto="${produtoId}"]`
+  );
+
+  botoes.forEach(item => item.disabled = true);
+
+  try {
+    if (typeof avaliarProduto !== "function") {
+      throw new Error(
+        "Sistema de avaliações indisponível."
+      );
+    }
+
+    await avaliarProduto(produtoId, nota);
+
+    alert("Obrigado! Sua avaliação foi registrada.");
+
+    await carregarVendedores();
+
+  } catch (erro) {
+    alert(erro.message);
+  } finally {
+    botoes.forEach(item => item.disabled = false);
+  }
 });
 
 carregarVendedores();
