@@ -1,93 +1,86 @@
 
-/* Frango Assado Perto de Mim
-   Cadastro, login e avaliações dos consumidores.
+/*
+  Frango Assado Perto de Mim
+  Avaliações sem cadastro de consumidor.
+
+  Uma avaliação por produto por dia,
+  utilizando um identificador salvo no navegador.
 */
 
-const clienteSupabase = window.supabase.createClient(
-  "https://mublqamdknlkrhtzzwfj.supabase.co",
-  "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85"
-);
+const AVALIACAO_SUPABASE_URL =
+  "https://mublqamdknlkrhtzzwfj.supabase.co";
 
-const formCliente = document.getElementById("formCliente");
-const emailCliente = document.getElementById("emailCliente");
-const senhaCliente = document.getElementById("senhaCliente");
-const botaoCadastrar = document.getElementById("botaoCadastrar");
-const botaoSair = document.getElementById("botaoSair");
-const clienteConectado = document.getElementById("clienteConectado");
-const identificacaoCliente = document.getElementById("identificacaoCliente");
-const mensagemCliente = document.getElementById("mensagemCliente");
+const AVALIACAO_SUPABASE_KEY =
+  "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
 
-function informarCliente(mensagem) {
-  if (mensagemCliente) {
-    mensagemCliente.textContent = mensagem;
+const CHAVE_VISITANTE =
+  "frango_assado_visitante_id";
+
+function criarIdentificadorVisitante() {
+  if (!globalThis.crypto ||
+      typeof globalThis.crypto.randomUUID !== "function") {
+    throw new Error(
+      "Este navegador não oferece identificação segura."
+    );
+  }
+
+  return globalThis.crypto.randomUUID();
+}
+
+function obterIdentificadorVisitante() {
+  try {
+    let identificador =
+      localStorage.getItem(CHAVE_VISITANTE);
+
+    const formatoUUID =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!identificador ||
+        !formatoUUID.test(identificador)) {
+      identificador = criarIdentificadorVisitante();
+
+      localStorage.setItem(
+        CHAVE_VISITANTE,
+        identificador
+      );
+    }
+
+    return identificador;
+  } catch {
+    throw new Error(
+      "Não foi possível guardar sua identificação neste navegador."
+    );
   }
 }
 
-async function cadastrarCliente(email, senha) {
-  const { data, error } = await clienteSupabase.auth.signUp({
-    email: email.trim(),
-    password: senha
-  });
+function dataAtualBrasilia() {
+  const partes = new Intl.DateTimeFormat(
+    "en-CA",
+    {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }
+  ).formatToParts(new Date());
 
-  if (error) throw new Error(error.message);
+  const valores = Object.fromEntries(
+    partes.map(parte => [parte.type, parte.value])
+  );
 
-  return data;
+  return `${valores.year}-${valores.month}-${valores.day}`;
 }
 
-async function entrarCliente(email, senha) {
-  const { data, error } =
-    await clienteSupabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: senha
-    });
-
-  if (error) {
-    throw new Error("Confira seu e-mail e senha.");
-  }
-
-  return data.user;
-}
-
-async function sairCliente() {
-  const { error } = await clienteSupabase.auth.signOut();
-
-  if (error) {
-    throw new Error("Não foi possível sair da conta.");
-  }
-
-  return true;
-}
-
-async function obterClienteAtual() {
-  const { data, error } = await clienteSupabase.auth.getUser();
-
-  if (error) return null;
-
-  return data.user;
-}
-
-async function atualizarAreaCliente() {
-  const usuario = await obterClienteAtual();
-
-  if (formCliente) formCliente.hidden = !!usuario;
-  if (clienteConectado) clienteConectado.hidden = !usuario;
-
-  if (identificacaoCliente) {
-    identificacaoCliente.textContent = usuario
-      ? "Conectado: " + usuario.email
-      : "";
-  }
-
-  return usuario;
+function chaveAvaliacaoDiaria(produtoId) {
+  return (
+    "frango_avaliacao_" +
+    String(produtoId) +
+    "_" +
+    dataAtualBrasilia()
+  );
 }
 
 async function avaliarProduto(produtoId, nota) {
-  const usuario = await obterClienteAtual();
-
-  if (!usuario) {
-    throw new Error("Entre na sua conta para avaliar.");
-  }
-
   const id = Number(produtoId);
   const estrelas = Number(nota);
 
@@ -100,78 +93,56 @@ async function avaliarProduto(produtoId, nota) {
     throw new Error("Escolha de 1 a 5 estrelas.");
   }
 
-  const { error } = await clienteSupabase
-    .from("avaliacoes")
-    .insert({
-      produto_id: id,
-      usuario_id: usuario.id,
-      nota: estrelas
-    });
+  const chave = chaveAvaliacaoDiaria(id);
 
-  if (error) {
-    if (error.code === "23505") {
-      throw new Error("Você já avaliou este produto.");
+  if (localStorage.getItem(chave) === "sim") {
+    throw new Error(
+      "Você já avaliou este produto hoje. " +
+      "Poderá avaliar novamente em outro dia, " +
+      "após uma nova compra."
+    );
+  }
+
+  const visitanteId =
+    obterIdentificadorVisitante();
+
+  const resposta = await fetch(
+    AVALIACAO_SUPABASE_URL +
+    "/rest/v1/rpc/registrar_avaliacao_visitante",
+    {
+      method: "POST",
+      headers: {
+        apikey: AVALIACAO_SUPABASE_KEY,
+        "Content-Type": "application/json",
+        Accept: "application/json"
+      },
+      body: JSON.stringify({
+        p_produto_id: id,
+        p_nota: estrelas,
+        p_visitante_id: visitanteId
+      })
+    }
+  );
+
+  if (!resposta.ok) {
+    const erro = await resposta.json().catch(() => ({}));
+
+    if (erro.code === "23505") {
+      localStorage.setItem(chave, "sim");
+
+      throw new Error(
+        "Você já avaliou este produto hoje. " +
+        "Poderá avaliar novamente em outro dia."
+      );
     }
 
-    throw new Error("Não foi possível registrar a avaliação.");
+    throw new Error(
+      "Não foi possível registrar sua avaliação. " +
+      "Tente novamente mais tarde."
+    );
   }
+
+  localStorage.setItem(chave, "sim");
 
   return true;
 }
-
-if (formCliente) {
-  formCliente.addEventListener("submit", async (evento) => {
-    evento.preventDefault();
-
-    informarCliente("Entrando...");
-
-    try {
-      await entrarCliente(emailCliente.value, senhaCliente.value);
-      senhaCliente.value = "";
-      await atualizarAreaCliente();
-      informarCliente("Você entrou na sua conta.");
-    } catch (erro) {
-      informarCliente(erro.message);
-    }
-  });
-}
-
-if (botaoCadastrar) {
-  botaoCadastrar.addEventListener("click", async () => {
-    informarCliente("Criando conta...");
-
-    try {
-      const resultado = await cadastrarCliente(
-        emailCliente.value,
-        senhaCliente.value
-      );
-
-      senhaCliente.value = "";
-      await atualizarAreaCliente();
-
-      informarCliente(resultado.session
-        ? "Conta criada. Você já pode avaliar."
-        : "Cadastro recebido. Confira seu e-mail para confirmar a conta.");
-    } catch (erro) {
-      informarCliente(erro.message);
-    }
-  });
-}
-
-if (botaoSair) {
-  botaoSair.addEventListener("click", async () => {
-    try {
-      await sairCliente();
-      await atualizarAreaCliente();
-      informarCliente("Você saiu da conta.");
-    } catch (erro) {
-      informarCliente(erro.message);
-    }
-  });
-}
-
-clienteSupabase.auth.onAuthStateChange(() => {
-  atualizarAreaCliente();
-});
-
-atualizarAreaCliente();
