@@ -3,12 +3,198 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
+
   <meta name="viewport"
         content="width=device-width, initial-scale=1">
 
   <title>Frango Assado Perto de Mim</title>
 
   <link rel="stylesheet" href="styles.css">
+
+  <style>
+    /* Aparência da nova tela inicial */
+
+    header {
+      padding: 20px 14px;
+    }
+
+    header h1 {
+      font-size: clamp(22px, 5vw, 30px);
+      margin-bottom: 6px;
+    }
+
+    header p {
+      font-size: 15px;
+      margin: 0;
+    }
+
+    .bairros {
+      padding: 18px;
+    }
+
+    .bairros h2 {
+      margin-bottom: 8px;
+    }
+
+    .bairros > p {
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .busca-bairro {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .busca-bairro input {
+      flex: 1;
+      min-width: 0;
+      min-height: 46px;
+      padding: 10px;
+      border: 1px solid #cbd0d7;
+      border-radius: 9px;
+      font-size: 16px;
+    }
+
+    .busca-bairro button {
+      flex: 0 0 auto;
+      margin: 0;
+    }
+
+    .botao-todos {
+      display: block;
+      width: 100%;
+      margin: 12px 0 0 !important;
+      background: #57534e;
+    }
+
+    #areaProximidade {
+      margin: 0 0 16px !important;
+      padding: 0 !important;
+      border: 0 !important;
+    }
+
+    #areaProximidade h3,
+    #areaProximidade > p:not(#mensagemProximidade) {
+      display: none;
+    }
+
+    #botaoProximidade {
+      width: 100%;
+      min-height: 58px;
+      margin: 0;
+      font-size: 17px;
+      background: #21864b;
+    }
+
+    #botaoLimparProximidade {
+      width: 100%;
+      margin: 8px 0 0;
+      background: #57534e;
+    }
+
+    #botaoLimparProximidade[hidden] {
+      display: none;
+    }
+
+    #mensagemProximidade {
+      font-size: 13px;
+      margin: 8px 0;
+    }
+
+    .avaliacoes-info,
+    .area-acesso {
+      width: min(100% - 32px, 1100px);
+      margin: 18px auto;
+      padding: 18px;
+      background: #fff;
+      border: 1px solid #e2e5e9;
+      border-radius: 14px;
+    }
+
+    .avaliacoes-info h2,
+    .area-acesso h2 {
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+
+    .avaliacoes-info p,
+    .area-acesso p {
+      font-size: 14px;
+      margin: 8px 0;
+    }
+
+    .links-acesso {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .links-acesso a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 50px;
+      padding: 10px;
+      border-radius: 9px;
+      background: #b94b12;
+      color: white;
+      text-decoration: none;
+      text-align: center;
+      font-weight: bold;
+      font-size: 14px;
+    }
+
+    .links-acesso a:last-child {
+      background: #57534e;
+    }
+
+    .links-acesso a:focus-visible {
+      outline: 3px solid #2674d9;
+      outline-offset: 3px;
+    }
+
+    @media (max-width: 650px) {
+      .bairros {
+        padding: 15px;
+      }
+
+      .bairros button {
+        width: auto;
+      }
+
+      .botao-todos {
+        width: 100% !important;
+      }
+
+      #botaoProximidade,
+      #botaoLimparProximidade {
+        width: 100%;
+      }
+
+      .avaliacoes-info,
+      .area-acesso {
+        width: calc(100% - 24px);
+        padding: 15px;
+      }
+    }
+
+    @media (max-width: 380px) {
+      .busca-bairro {
+        flex-direction: column;
+      }
+
+      .busca-bairro button {
+        width: 100%;
+      }
+
+      .links-acesso {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 
 <body>
@@ -20,55 +206,104 @@
 
 <main>
 
-  <section class="bairros">
-    <h2>Encontre por bairro</h2>
-    <p>Escolha uma região para consultar os vendedores.</p>
+  <section class="bairros"
+           aria-labelledby="titulo-busca">
 
-    <button type="button" data-bairro="Todos">
-      Todos os bairros
+    <h2 id="titulo-busca">
+      Encontre seu frango assado
+    </h2>
+
+    <!-- O app.js coloca aqui o botão de proximidade. -->
+
+    <p>
+      Ou procure vendedores em outro bairro:
+    </p>
+
+    <div class="busca-bairro">
+      <input
+        id="campoBuscaBairro"
+        type="search"
+        placeholder="Nome do bairro"
+        aria-label="Nome do bairro"
+        autocomplete="off"
+        list="bairrosDisponiveis"
+      >
+
+      <datalist id="bairrosDisponiveis"></datalist>
+
+      <button type="button" id="botaoBuscarBairro">
+        Buscar
+      </button>
+    </div>
+
+    <button
+      type="button"
+      class="botao-todos"
+      data-bairro="Todos">
+      Ver todos os vendedores
     </button>
 
-    <button type="button" data-bairro="SetVille">
-      SetVille
-    </button>
+    <p id="mensagemBuscaBairro"
+       role="status"
+       aria-live="polite"></p>
 
-    <button type="button" data-bairro="Campo de São José">
-      Campo de São José
-    </button>
-
-    <button type="button" data-bairro="Putim">
-      Putim
-    </button>
   </section>
 
-  <section aria-labelledby="titulo-avaliacoes">
+  <section id="listaVendedores"
+           aria-live="polite">
+    <p>Carregando vendedores...</p>
+  </section>
+
+  <section class="avaliacoes-info"
+           aria-labelledby="titulo-avaliacoes">
+
     <h2 id="titulo-avaliacoes">
-      ⭐ Avalie os produtos
+      ⭐ Avaliações dos produtos
     </h2>
 
     <p>
-      Comprou um produto? Compartilhe sua experiência!
+      Comprou um produto?
+      Avalie de 1 a 5 estrelas.
+      Não é necessário criar uma conta.
     </p>
 
     <p>
-      Você pode avaliar de 1 a 5 estrelas,
-      sem precisar criar uma conta.
+      É permitida uma avaliação por produto
+      por dia, neste navegador.
     </p>
 
-    <p>
-      É permitida uma avaliação por produto por dia,
-      neste navegador. Após uma nova compra,
-      você poderá avaliar novamente em outro dia.
-    </p>
   </section>
 
-  <section id="listaVendedores" aria-live="polite">
-    <p>Carregando vendedores...</p>
+  <section class="area-acesso"
+           aria-labelledby="titulo-acesso">
+
+    <h2 id="titulo-acesso">
+      🔐 Área de Acesso
+    </h2>
+
+    <p>
+      Exclusiva para vendedores cadastrados
+      e administração.
+    </p>
+
+    <div class="links-acesso">
+
+      <a href="vendedor.html">
+        🏪 Área do Vendedor
+      </a>
+
+      <a href="admin.html">
+        🔐 Área Administrativa
+      </a>
+
+    </div>
+
   </section>
 
 </main>
 
 <footer>
+
   <p>
     Frango Assado Perto de Mim ·
     Projeto-piloto em São José dos Campos, SP.
@@ -78,6 +313,7 @@
     Confirme preços, horários e disponibilidade
     diretamente com o vendedor.
   </p>
+
 </footer>
 
 <script src="cliente.js" defer></script>
