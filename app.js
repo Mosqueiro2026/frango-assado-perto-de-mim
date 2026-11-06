@@ -78,6 +78,23 @@ function criarContato(valor, identificacao) {
   `;
 }
 
+function mensagemPedido(produto, quantidade) {
+  const preco = Number(produto.preco);
+  const precoValido = produto.preco !== null &&
+    produto.preco !== undefined && produto.preco !== "" &&
+    Number.isFinite(preco) && preco >= 0;
+  const total = precoValido
+    ? formatarPreco(preco * quantidade)
+    : "A confirmar com o vendedor";
+
+  return `Olá! Gostaria de encomendar ${quantidade} unidade(s) de ` +
+    `${produto.nome || "produto"}.\n` +
+    `Valor unitário: ${formatarPreco(produto.preco)}.\n` +
+    `Total: ${total}.\n` +
+    `Vi no Frango Assado Perto de Mim. ` +
+    `Aguardo a confirmação do pedido.`;
+}
+
 function criarPedido(produto, vendedor) {
   const telefone =
     normalizarTelefone(vendedor.whatsapp) ||
@@ -85,17 +102,30 @@ function criarPedido(produto, vendedor) {
 
   if (!telefone) return "";
 
-  const mensagem =
-    `Olá! Gostaria de pedir ${produto.nome} ` +
-    `(${formatarPreco(produto.preco)}). ` +
-    `Vi no Frango Assado Perto de Mim.`;
+  const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(
+    mensagemPedido(produto, 1)
+  )}`;
 
   return `
-    <a href="https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}"
-       target="_blank"
-       rel="noopener noreferrer">
-      💬 Pedir pelo WhatsApp
-    </a>
+    <div class="preparar-pedido" data-pedido-produto="${produto.id}"
+         style="margin:12px 0;">
+      <label for="quantidade-produto-${produto.id}">
+        <strong>Quantidade:</strong>
+      </label>
+      <input id="quantidade-produto-${produto.id}"
+             type="number" min="1" max="99" step="1" value="1"
+             data-quantidade-pedido="${produto.id}"
+             style="width:75px;padding:6px;margin:0 8px;">
+      <p data-total-pedido="${produto.id}">
+        <strong>Total: ${formatarPreco(produto.preco)}</strong>
+      </p>
+      <a data-link-pedido="${produto.id}"
+         href="${textoSeguro(url)}"
+         target="_blank" rel="noopener noreferrer">
+        💬 Enviar pedido pelo WhatsApp
+      </a>
+      <p class="observacao">Pedido sujeito à confirmação do vendedor.</p>
+    </div>
   `;
 }
 
@@ -207,7 +237,7 @@ function criarBotoesAvaliacao(produto) {
       </div>
 
       <p class="observacao">
-        Entre na sua conta para registrar sua avaliação.
+        Avalie de 1 a 5 estrelas, sem precisar criar uma conta.
       </p>
     </div>
   `;
@@ -344,7 +374,7 @@ async function consultarTabela(tabela, parametros) {
 
 async function carregarVendedores() {
   lista.innerHTML =
-    "<p>Carregando vendedores e produtos...</p>";
+    "<p>Carregando vendedores e produtos...";
 
   try {
     const dadosVendedores = await consultarTabela(
@@ -411,6 +441,62 @@ document.querySelectorAll("[data-bairro]").forEach(botao => {
     bairroSelecionado = botao.dataset.bairro;
     renderizar();
   });
+});
+
+// Atualiza o total e a mensagem do WhatsApp ao escolher a quantidade.
+lista.addEventListener("input", evento => {
+  const campo = evento.target.closest("[data-quantidade-pedido]");
+  if (!campo) return;
+
+  const produtoId = String(campo.dataset.quantidadePedido);
+  const produto = produtos.find(item => String(item.id) === produtoId);
+  if (!produto) return;
+
+  const vendedor = vendedores.find(
+    item => String(item.id) === String(produto.vendedor_id)
+  );
+  if (!vendedor) return;
+
+  const quantidade = Number(campo.value);
+  const valido = Number.isInteger(quantidade) &&
+    quantidade >= 1 && quantidade <= 99;
+  const area = campo.closest("[data-pedido-produto]");
+  const total = area?.querySelector("[data-total-pedido]");
+  const link = area?.querySelector("[data-link-pedido]");
+  if (!total || !link) return;
+
+  if (!valido) {
+    total.textContent = "Informe uma quantidade de 1 a 99.";
+    link.removeAttribute("href");
+    link.setAttribute("aria-disabled", "true");
+    return;
+  }
+
+  const preco = Number(produto.preco);
+  const precoValido = produto.preco !== null &&
+    produto.preco !== undefined && produto.preco !== "" &&
+    Number.isFinite(preco) && preco >= 0;
+  total.textContent = "Total: " + (precoValido
+    ? formatarPreco(preco * quantidade)
+    : "A confirmar com o vendedor");
+
+  const telefone = normalizarTelefone(vendedor.whatsapp) ||
+    normalizarTelefone(vendedor.whatsapp2);
+  if (!telefone) return;
+
+  link.href = `https://wa.me/55${telefone}?text=${encodeURIComponent(
+    mensagemPedido(produto, quantidade)
+  )}`;
+  link.removeAttribute("aria-disabled");
+});
+
+// Impede abrir o WhatsApp com quantidade inválida.
+lista.addEventListener("click", evento => {
+  const link = evento.target.closest("[data-link-pedido]");
+  if (link && !link.hasAttribute("href")) {
+    evento.preventDefault();
+    alert("Informe uma quantidade de 1 a 99.");
+  }
 });
 
 lista.addEventListener("click", async evento => {
