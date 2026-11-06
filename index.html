@@ -47,53 +47,19 @@
     </h2>
 
     <p>
-      Entre ou crie uma conta gratuita para avaliar
-      os produtos de 1 a 5 estrelas.
+      Comprou um produto? Compartilhe sua experiência!
     </p>
 
-    <div id="areaCliente">
+    <p>
+      Você pode avaliar de 1 a 5 estrelas,
+      sem precisar criar uma conta.
+    </p>
 
-      <form id="formCliente">
-        <label for="emailCliente">E-mail</label>
-        <input
-          id="emailCliente"
-          type="email"
-          autocomplete="email"
-          required
-        >
-
-        <label for="senhaCliente">Senha</label>
-        <input
-          id="senhaCliente"
-          type="password"
-          autocomplete="current-password"
-          minlength="6"
-          required
-        >
-
-        <p>
-          <button type="submit" id="botaoEntrar">
-            Entrar
-          </button>
-
-          <button type="button" id="botaoCadastrar">
-            Criar conta
-          </button>
-        </p>
-      </form>
-
-      <div id="clienteConectado" hidden>
-        <p id="identificacaoCliente"></p>
-
-        <button type="button" id="botaoSair">
-          Sair da conta
-        </button>
-      </div>
-
-      <p id="mensagemCliente" role="status"
-         aria-live="polite"></p>
-
-    </div>
+    <p>
+      É permitida uma avaliação por produto por dia,
+      neste navegador. Após uma nova compra,
+      você poderá avaliar novamente em outro dia.
+    </p>
   </section>
 
   <section id="listaVendedores" aria-live="polite">
@@ -113,11 +79,6 @@
     diretamente com o vendedor.
   </p>
 </footer>
-
-<script
-  src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
-  defer>
-</script>
 
 <script src="cliente.js" defer></script>
 <script src="app.js" defer></script>
