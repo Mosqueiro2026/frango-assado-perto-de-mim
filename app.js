@@ -1,7 +1,8 @@
 
-/* Frango Assado Perto de Mim
-   Catálogo público, fotografias e avaliações.
-   Administração e vendedores permanecem separados.
+/*
+  Frango Assado Perto de Mim
+  Catalogo, fotos, avaliacoes, pedidos e proximidade.
+  Administracao e vendedores permanecem separados.
 */
 
 const SUPABASE_URL =
@@ -16,6 +17,8 @@ let vendedores = [];
 let produtos = [];
 let avaliacoes = [];
 let bairroSelecionado = "Todos";
+let localizacaoCliente = null;
+let buscaPorProximidade = false;
 
 function textoSeguro(valor) {
   return String(valor ?? "").replace(/[&<>"']/g, caractere => ({
@@ -80,19 +83,30 @@ function criarContato(valor, identificacao) {
 
 function mensagemPedido(produto, quantidade) {
   const preco = Number(produto.preco);
-  const precoValido = produto.preco !== null &&
-    produto.preco !== undefined && produto.preco !== "" &&
-    Number.isFinite(preco) && preco >= 0;
+
+  const precoValido =
+    produto.preco !== null &&
+    produto.preco !== undefined &&
+    produto.preco !== "" &&
+    Number.isFinite(preco) &&
+    preco >= 0;
+
   const total = precoValido
     ? formatarPreco(preco * quantidade)
     : "A confirmar com o vendedor";
 
-  return `Olá! Gostaria de encomendar ${quantidade} unidade(s) de ` +
+  const unidade = quantidade === 1
+    ? "unidade"
+    : "unidades";
+
+  return (
+    `Olá! Gostaria de encomendar ${quantidade} ${unidade} de ` +
     `${produto.nome || "produto"}.\n` +
     `Valor unitário: ${formatarPreco(produto.preco)}.\n` +
     `Total: ${total}.\n` +
     `Vi no Frango Assado Perto de Mim. ` +
-    `Aguardo a confirmação do pedido.`;
+    `Aguardo a confirmação do pedido.`
+  );
 }
 
 function criarPedido(produto, vendedor) {
@@ -102,29 +116,47 @@ function criarPedido(produto, vendedor) {
 
   if (!telefone) return "";
 
-  const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(
-    mensagemPedido(produto, 1)
-  )}`;
+  const url =
+    `https://wa.me/55${telefone}?text=` +
+    encodeURIComponent(mensagemPedido(produto, 1));
 
   return `
-    <div class="preparar-pedido" data-pedido-produto="${produto.id}"
+    <div class="preparar-pedido"
+         data-pedido-produto="${produto.id}"
          style="margin:12px 0;">
+
       <label for="quantidade-produto-${produto.id}">
         <strong>Quantidade:</strong>
       </label>
-      <input id="quantidade-produto-${produto.id}"
-             type="number" min="1" max="99" step="1" value="1"
-             data-quantidade-pedido="${produto.id}"
-             style="width:75px;padding:6px;margin:0 8px;">
+
+      <input
+        id="quantidade-produto-${produto.id}"
+        type="number"
+        min="1"
+        max="99"
+        step="1"
+        value="1"
+        data-quantidade-pedido="${produto.id}"
+        style="width:75px;padding:6px;margin:0 8px;"
+      >
+
       <p data-total-pedido="${produto.id}">
-        <strong>Total: ${formatarPreco(produto.preco)}</strong>
+        <strong>
+          Total: ${formatarPreco(produto.preco)}
+        </strong>
       </p>
-      <a data-link-pedido="${produto.id}"
-         href="${textoSeguro(url)}"
-         target="_blank" rel="noopener noreferrer">
+
+      <a
+        data-link-pedido="${produto.id}"
+        href="${textoSeguro(url)}"
+        target="_blank"
+        rel="noopener noreferrer">
         💬 Enviar pedido pelo WhatsApp
       </a>
-      <p class="observacao">Pedido sujeito à confirmação do vendedor.</p>
+
+      <p class="observacao">
+        Pedido sujeito à confirmação do vendedor.
+      </p>
     </div>
   `;
 }
@@ -191,8 +223,10 @@ function mostrarAvaliacao(produtoId) {
   }
 
   const media =
-    notas.reduce((soma, avaliacao) =>
-      soma + Number(avaliacao.nota), 0) / notas.length;
+    notas.reduce(
+      (soma, avaliacao) => soma + Number(avaliacao.nota),
+      0
+    ) / notas.length;
 
   const quantidadeEstrelas = Math.round(media);
 
@@ -222,6 +256,7 @@ function criarBotoesAvaliacao(produto) {
 
       <div role="group"
            aria-label="Avaliar ${textoSeguro(produto.nome || "produto")}">
+
         ${[1, 2, 3, 4, 5].map(nota => `
           <button
             type="button"
@@ -237,11 +272,220 @@ function criarBotoesAvaliacao(produto) {
       </div>
 
       <p class="observacao">
-        Avalie de 1 a 5 estrelas, sem precisar criar uma conta.
+        Avalie de 1 a 5 estrelas,
+        sem precisar criar uma conta.
       </p>
     </div>
   `;
 }
+
+/*
+  LOCALIZACAO E PROXIMIDADE
+*/
+
+function coordenadaValida(latitude, longitude) {
+  if (
+    latitude === null ||
+    latitude === undefined ||
+    longitude === null ||
+    longitude === undefined ||
+    latitude === "" ||
+    longitude === ""
+  ) {
+    return false;
+  }
+
+  const lat = Number(latitude);
+  const lon = Number(longitude);
+
+  return (
+    Number.isFinite(lat) &&
+    Number.isFinite(lon) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lon >= -180 &&
+    lon <= 180
+  );
+}
+
+function calcularDistanciaKm(lat1, lon1, lat2, lon2) {
+  const radianos = graus => graus * Math.PI / 180;
+  const raioTerraKm = 6371;
+
+  const diferencaLatitude = radianos(lat2 - lat1);
+  const diferencaLongitude = radianos(lon2 - lon1);
+
+  const a =
+    Math.sin(diferencaLatitude / 2) ** 2 +
+    Math.cos(radianos(lat1)) *
+    Math.cos(radianos(lat2)) *
+    Math.sin(diferencaLongitude / 2) ** 2;
+
+  const c = 2 * Math.atan2(
+    Math.sqrt(a),
+    Math.sqrt(Math.max(0, 1 - a))
+  );
+
+  return raioTerraKm * c;
+}
+
+function distanciaVendedor(vendedor) {
+  if (
+    !localizacaoCliente ||
+    !coordenadaValida(vendedor.latitude, vendedor.longitude)
+  ) {
+    return null;
+  }
+
+  return calcularDistanciaKm(
+    localizacaoCliente.latitude,
+    localizacaoCliente.longitude,
+    Number(vendedor.latitude),
+    Number(vendedor.longitude)
+  );
+}
+
+function mostrarDistancia(vendedor) {
+  const distancia = distanciaVendedor(vendedor);
+
+  if (distancia === null) {
+    return buscaPorProximidade
+      ? '<p class="observacao">Distância não cadastrada.</p>'
+      : "";
+  }
+
+  const distanciaFormatada = distancia.toLocaleString(
+    "pt-BR",
+    {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1
+    }
+  );
+
+  return `
+    <p>
+      📍 <strong>Distância aproximada:</strong>
+      ${distanciaFormatada} km em linha reta
+    </p>
+  `;
+}
+
+function prepararBuscaProximidade() {
+  const secaoBairros = document.querySelector(".bairros");
+
+  if (!secaoBairros) return;
+
+  const area = document.createElement("div");
+  area.id = "areaProximidade";
+  area.style.margin = "16px 0";
+  area.style.padding = "12px";
+  area.style.border = "1px solid #ddd";
+  area.style.borderRadius = "10px";
+
+  area.innerHTML = `
+    <h3>📍 Vendedores perto de mim</h3>
+
+    <p>
+      Encontre os vendedores mais próximos,
+      usando a localização do seu aparelho.
+    </p>
+
+    <button type="button" id="botaoProximidade">
+      📍 Encontrar vendedores perto de mim
+    </button>
+
+    <button type="button"
+            id="botaoLimparProximidade"
+            hidden>
+      Voltar à busca por bairro
+    </button>
+
+    <p id="mensagemProximidade"
+       role="status"
+       aria-live="polite"></p>
+  `;
+
+  secaoBairros.appendChild(area);
+
+  const botao = document.getElementById("botaoProximidade");
+  const limpar = document.getElementById(
+    "botaoLimparProximidade"
+  );
+  const mensagem = document.getElementById(
+    "mensagemProximidade"
+  );
+
+  botao.addEventListener("click", () => {
+    if (!navigator.geolocation) {
+      mensagem.textContent =
+        "Este navegador não permite consultar a localização.";
+      return;
+    }
+
+    botao.disabled = true;
+    mensagem.textContent =
+      "Aguardando autorização para consultar sua localização...";
+
+    navigator.geolocation.getCurrentPosition(
+      posicao => {
+        localizacaoCliente = {
+          latitude: posicao.coords.latitude,
+          longitude: posicao.coords.longitude
+        };
+
+        buscaPorProximidade = true;
+        bairroSelecionado = "Todos";
+
+        mensagem.textContent =
+          "Vendedores organizados pela distância aproximada. " +
+          "As distâncias são calculadas em linha reta.";
+
+        limpar.hidden = false;
+        botao.disabled = false;
+
+        renderizar();
+      },
+      erro => {
+        botao.disabled = false;
+
+        if (erro.code === 1) {
+          mensagem.textContent =
+            "Localização não autorizada. " +
+            "Você pode continuar pesquisando por bairro.";
+        } else if (erro.code === 2) {
+          mensagem.textContent =
+            "Não foi possível identificar sua localização. " +
+            "Continue pesquisando por bairro.";
+        } else {
+          mensagem.textContent =
+            "A consulta de localização demorou demais. " +
+            "Tente novamente se desejar.";
+        }
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 12000,
+        maximumAge: 60000
+      }
+    );
+  });
+
+  limpar.addEventListener("click", () => {
+    localizacaoCliente = null;
+    buscaPorProximidade = false;
+    bairroSelecionado = "Todos";
+
+    limpar.hidden = true;
+    mensagem.textContent =
+      "Busca por proximidade desativada.";
+
+    renderizar();
+  });
+}
+
+/*
+  PRODUTOS E VENDEDORES
+*/
 
 function renderizarProdutos(vendedor) {
   const itens = produtos.filter(
@@ -304,11 +548,23 @@ function renderizarProdutos(vendedor) {
 }
 
 function renderizar() {
-  const filtrados = vendedores.filter(
+  let filtrados = vendedores.filter(
     vendedor =>
       bairroSelecionado === "Todos" ||
       vendedor.bairro === bairroSelecionado
   );
+
+  if (buscaPorProximidade && localizacaoCliente) {
+    filtrados = [...filtrados].sort((primeiro, segundo) => {
+      const distanciaPrimeiro = distanciaVendedor(primeiro);
+      const distanciaSegundo = distanciaVendedor(segundo);
+
+      if (distanciaPrimeiro === null) return 1;
+      if (distanciaSegundo === null) return -1;
+
+      return distanciaPrimeiro - distanciaSegundo;
+    });
+  }
 
   if (!filtrados.length) {
     lista.innerHTML =
@@ -330,6 +586,8 @@ function renderizar() {
         <strong>Endereço:</strong>
         ${textoSeguro(vendedor.endereco || "A confirmar")}
       </p>
+
+      ${mostrarDistancia(vendedor)}
 
       ${renderizarProdutos(vendedor)}
 
@@ -374,13 +632,13 @@ async function consultarTabela(tabela, parametros) {
 
 async function carregarVendedores() {
   lista.innerHTML =
-    "<p>Carregando vendedores e produtos...";
+    "<p>Carregando vendedores e produtos...</p>";
 
   try {
     const dadosVendedores = await consultarTabela(
       "vendedores",
-      "select=id,nome,bairro,endereco,whatsapp,whatsapp2" +
-      "&ativo=eq.true&order=nome.asc"
+      "select=id,nome,bairro,endereco,whatsapp,whatsapp2," +
+      "latitude,longitude&ativo=eq.true&order=nome.asc"
     );
 
     const dadosProdutos = await consultarTabela(
@@ -426,6 +684,7 @@ async function carregarVendedores() {
         Não foi possível consultar o catálogo agora.
         Confira a conexão e tente novamente.
       </p>
+
       <button type="button" id="tentarNovamente">
         Tentar novamente
       </button>
@@ -436,69 +695,124 @@ async function carregarVendedores() {
   }
 }
 
+/*
+  EVENTOS DA PAGINA
+*/
+
 document.querySelectorAll("[data-bairro]").forEach(botao => {
   botao.addEventListener("click", () => {
     bairroSelecionado = botao.dataset.bairro;
+
+    if (buscaPorProximidade) {
+      buscaPorProximidade = false;
+      localizacaoCliente = null;
+
+      const limpar = document.getElementById(
+        "botaoLimparProximidade"
+      );
+
+      const mensagem = document.getElementById(
+        "mensagemProximidade"
+      );
+
+      if (limpar) limpar.hidden = true;
+
+      if (mensagem) {
+        mensagem.textContent =
+          "Busca por bairro selecionada.";
+      }
+    }
+
     renderizar();
   });
 });
 
-// Atualiza o total e a mensagem do WhatsApp ao escolher a quantidade.
+// Atualiza o valor total e o pedido pelo WhatsApp.
 lista.addEventListener("input", evento => {
-  const campo = evento.target.closest("[data-quantidade-pedido]");
+  const campo = evento.target.closest(
+    "[data-quantidade-pedido]"
+  );
+
   if (!campo) return;
 
   const produtoId = String(campo.dataset.quantidadePedido);
-  const produto = produtos.find(item => String(item.id) === produtoId);
+
+  const produto = produtos.find(
+    item => String(item.id) === produtoId
+  );
+
   if (!produto) return;
 
   const vendedor = vendedores.find(
     item => String(item.id) === String(produto.vendedor_id)
   );
+
   if (!vendedor) return;
 
   const quantidade = Number(campo.value);
-  const valido = Number.isInteger(quantidade) &&
-    quantidade >= 1 && quantidade <= 99;
+
+  const valido =
+    campo.value.trim() !== "" &&
+    Number.isInteger(quantidade) &&
+    quantidade >= 1 &&
+    quantidade <= 99;
+
   const area = campo.closest("[data-pedido-produto]");
   const total = area?.querySelector("[data-total-pedido]");
   const link = area?.querySelector("[data-link-pedido]");
+
   if (!total || !link) return;
 
   if (!valido) {
-    total.textContent = "Informe uma quantidade de 1 a 99.";
+    total.textContent =
+      "Informe uma quantidade de 1 a 99.";
+
     link.removeAttribute("href");
     link.setAttribute("aria-disabled", "true");
     return;
   }
 
   const preco = Number(produto.preco);
-  const precoValido = produto.preco !== null &&
-    produto.preco !== undefined && produto.preco !== "" &&
-    Number.isFinite(preco) && preco >= 0;
-  total.textContent = "Total: " + (precoValido
-    ? formatarPreco(preco * quantidade)
-    : "A confirmar com o vendedor");
 
-  const telefone = normalizarTelefone(vendedor.whatsapp) ||
+  const precoValido =
+    produto.preco !== null &&
+    produto.preco !== undefined &&
+    produto.preco !== "" &&
+    Number.isFinite(preco) &&
+    preco >= 0;
+
+  total.textContent = "Total: " + (
+    precoValido
+      ? formatarPreco(preco * quantidade)
+      : "A confirmar com o vendedor"
+  );
+
+  const telefone =
+    normalizarTelefone(vendedor.whatsapp) ||
     normalizarTelefone(vendedor.whatsapp2);
+
   if (!telefone) return;
 
-  link.href = `https://wa.me/55${telefone}?text=${encodeURIComponent(
-    mensagemPedido(produto, quantidade)
-  )}`;
+  link.href =
+    `https://wa.me/55${telefone}?text=` +
+    encodeURIComponent(
+      mensagemPedido(produto, quantidade)
+    );
+
   link.removeAttribute("aria-disabled");
 });
 
-// Impede abrir o WhatsApp com quantidade inválida.
+// Impede pedidos com quantidade invalida.
 lista.addEventListener("click", evento => {
   const link = evento.target.closest("[data-link-pedido]");
+
   if (link && !link.hasAttribute("href")) {
     evento.preventDefault();
     alert("Informe uma quantidade de 1 a 99.");
   }
 });
 
+// Avaliacoes sem cadastro.
 lista.addEventListener("click", async evento => {
   const botao = evento.target.closest(
     "[data-avaliar-produto]"
@@ -538,4 +852,6 @@ lista.addEventListener("click", async evento => {
   }
 });
 
+// Inicializacao.
+prepararBuscaProximidade();
 carregarVendedores();
