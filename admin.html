@@ -6,148 +6,150 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Administração - Frango Assado Perto de Mim</title>
 <style>
-  * { box-sizing: border-box; }
-  body {
-    font-family: Arial, sans-serif;
-    background: #fff7ed;
-    padding: 16px;
-    color: #292524;
-  }
-  main {
-    background: white;
-    max-width: 850px;
-    margin: 25px auto;
-    padding: 25px;
-    border-radius: 12px;
-    box-shadow: 0 3px 14px #00000012;
-  }
-  h1, h3 { color: #b45309; }
-  input, button {
-    display: block;
-    width: 100%;
-    padding: 12px;
-    margin: 12px 0;
-    font-size: 16px;
-    border-radius: 7px;
-  }
-  input { border: 1px solid #a8a29e; }
-  button {
-    background: #b45309;
-    color: white;
-    border: 0;
-    cursor: pointer;
-  }
-  button:disabled { opacity: .6; }
-  [hidden] { display: none !important; }
-  hr {
-    border: 0;
-    border-top: 1px solid #e7e5e4;
-    margin: 25px 0;
-  }
-  label {
-    display: block;
-    font-weight: bold;
-    margin-top: 12px;
-  }
-  .secundario { background: #57534e; }
-  #mensagem, #mensagemCadastro,
-  #mensagemHistorico { overflow-wrap: anywhere; }
+* { box-sizing: border-box; }
+body {
+  font-family: Arial, sans-serif;
+  background: #fff7ed;
+  padding: 16px;
+  color: #292524;
+}
+main {
+  background: white;
+  max-width: 850px;
+  margin: 25px auto;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 3px 14px #00000012;
+}
+h1, h3 { color: #b45309; }
+input, button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin: 12px 0;
+  font-size: 16px;
+  border-radius: 7px;
+}
+input { border: 1px solid #a8a29e; }
+button {
+  background: #b45309;
+  color: white;
+  border: 0;
+  cursor: pointer;
+}
+button:disabled { opacity: .6; }
+[hidden] { display: none !important; }
+hr {
+  border: 0;
+  border-top: 1px solid #e7e5e4;
+  margin: 25px 0;
+}
+label {
+  display: block;
+  font-weight: bold;
+  margin-top: 12px;
+}
+.secundario { background: #57534e; }
+#mensagem, #mensagemCadastro,
+#mensagemHistorico { overflow-wrap: anywhere; }
 
-  /* Histórico organizado */
-  .registro {
-    border: 1px solid #e7e5e4;
-    border-radius: 12px;
-    margin: 15px 0;
-    padding: 17px;
-    background: #fffdf9;
-  }
-  .registro-topo {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 10px;
-  }
-  .data {
-    color: #78716c;
-    font-size: 13px;
-  }
-  .tipo {
-    background: #ffedd5;
-    color: #92400e;
-    border-radius: 20px;
-    padding: 6px 12px;
-    font-size: 13px;
-    font-weight: bold;
-  }
-  .registro h3 {
-    margin: 8px 0;
-    font-size: 18px;
-  }
-  .subtitulo {
-    color: #57534e;
-    font-size: 14px;
-    margin: 5px 0 14px;
-  }
-  .mudanca {
-    border-top: 1px solid #eee5d8;
-    padding: 12px 0;
-  }
-  .mudanca strong {
-    display: block;
-    margin-bottom: 8px;
-  }
-  .comparacao {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-  .valor {
-    background: #f5f5f4;
-    padding: 10px;
-    border-radius: 8px;
-    overflow-wrap: anywhere;
-    min-width: 0;
-  }
-  .valor.novo { background: #ecfdf5; }
-  .valor small {
-    display: block;
-    color: #57534e;
-    margin-bottom: 6px;
-  }
-  .valor span {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-  details {
-    margin-top: 12px;
-    border-top: 1px solid #e7e5e4;
-    padding-top: 12px;
-  }
-  summary {
-    cursor: pointer;
-    color: #92400e;
-    font-weight: bold;
-  }
-  pre {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-    font-size: 12px;
-    background: #f5f5f4;
-    padding: 12px;
-    border-radius: 8px;
-  }
-  .aviso {
-    font-size: 13px;
-    color: #78716c;
-  }
-  @media (max-width: 540px) {
-    main { padding: 15px; }
-    .comparacao { grid-template-columns: 1fr; }
-  }
+/* Histórico de alterações */
+.registro {
+  border: 1px solid #e7e5e4;
+  border-radius: 12px;
+  margin: 15px 0;
+  padding: 17px;
+  background: #fffdf9;
+}
+.registro-topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.data {
+  color: #57534e;
+  font-size: 14px;
+  font-weight: bold;
+}
+.tipo {
+  background: #ffedd5;
+  color: #92400e;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: bold;
+}
+.registro h3 {
+  margin: 8px 0;
+  font-size: 18px;
+}
+.subtitulo {
+  color: #57534e;
+  font-size: 14px;
+  margin: 5px 0 14px;
+}
+.mudanca {
+  border-top: 1px solid #eee5d8;
+  padding: 12px 0;
+}
+.mudanca strong {
+  display: block;
+  margin-bottom: 8px;
+}
+.comparacao {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.valor {
+  background: #f5f5f4;
+  padding: 10px;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+.valor.novo { background: #ecfdf5; }
+.valor small {
+  display: block;
+  color: #57534e;
+  margin-bottom: 6px;
+}
+.valor span {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+details {
+  margin-top: 12px;
+  border-top: 1px solid #e7e5e4;
+  padding-top: 12px;
+}
+summary {
+  cursor: pointer;
+  color: #92400e;
+  font-weight: bold;
+}
+pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  background: #f5f5f4;
+  padding: 12px;
+  border-radius: 8px;
+}
+.aviso {
+  font-size: 13px;
+  color: #78716c;
+}
+@media (max-width: 540px) {
+  main { padding: 15px; }
+  .comparacao { grid-template-columns: 1fr; }
+}
 </style>
 </head>
+
 <body>
 <main>
   <h1>🍗 Área Administrativa</h1>
@@ -159,11 +161,14 @@
       <label for="email">E-mail</label>
       <input id="email" type="email"
         autocomplete="username" required>
+
       <label for="senha">Senha</label>
       <input id="senha" type="password"
         autocomplete="current-password" required>
+
       <button type="submit">Entrar</button>
     </form>
+
     <button id="recuperar" type="button">
       Esqueci minha senha
     </button>
@@ -174,7 +179,8 @@
     <form id="formSenha">
       <label for="senhaNova">Nova senha</label>
       <input id="senhaNova" type="password"
-        autocomplete="new-password" minlength="12" required>
+        autocomplete="new-password"
+        minlength="12" required>
       <button type="submit">Salvar nova senha</button>
     </form>
   </section>
@@ -182,6 +188,7 @@
   <section id="painel" hidden>
     <h2>Acesso autorizado</h2>
     <p>Login administrativo realizado com sucesso.</p>
+
     <hr>
 
     <h2>Cadastrar vendedor</h2>
@@ -218,6 +225,7 @@
         Salvar vendedor
       </button>
     </form>
+
     <p id="mensagemCadastro"
       role="status" aria-live="polite"></p>
 
@@ -226,7 +234,8 @@
     <h2>📋 Histórico de alterações</h2>
     <p>
       Consulte os últimos 100 registros de vendedores
-      e produtos, organizados para facilitar a leitura.
+      e produtos, com data, hora e informações
+      organizadas.
     </p>
 
     <button id="consultarHistorico" type="button">
@@ -239,11 +248,12 @@
     <div id="areaHistorico" hidden></div>
 
     <p class="aviso">
-      Os registros são somente para consulta.
-      Nenhuma informação pode ser alterada nesta tela.
+      Consulta somente para leitura.
+      Os registros originais são preservados.
     </p>
 
     <hr>
+
     <button id="sair" class="secundario" type="button">
       Sair
     </button>
@@ -314,7 +324,7 @@ function normalizarTelefone(valor) {
   return numero;
 }
 
-/* Funções de apresentação do histórico */
+/* Organização visual do histórico */
 
 function objeto(valor) {
   if (valor && typeof valor === "object" &&
@@ -325,7 +335,8 @@ function objeto(valor) {
   if (typeof valor === "string") {
     try {
       const convertido = JSON.parse(valor);
-      if (convertido && typeof convertido === "object" &&
+      if (convertido &&
+          typeof convertido === "object" &&
           !Array.isArray(convertido)) {
         return convertido;
       }
@@ -398,20 +409,24 @@ function nomeCampo(chave) {
 }
 
 function textoValor(valor, campo = "") {
-  if (valor === null || valor === undefined ||
+  if (valor === null ||
+      valor === undefined ||
       valor === "") {
     return "Não informado";
   }
 
   if (typeof valor === "boolean") {
     if (campo === "disponivel") {
-      return valor ? "Disponível" : "Indisponível";
+      return valor
+        ? "Disponível"
+        : "Indisponível";
     }
     return valor ? "Sim" : "Não";
   }
 
   if (campo === "preco") {
     const numero = Number(valor);
+
     if (Number.isFinite(numero)) {
       return numero.toLocaleString("pt-BR", {
         style: "currency",
@@ -422,8 +437,9 @@ function textoValor(valor, campo = "") {
 
   if (campo === "foto_url" &&
       typeof valor === "string") {
-    return valor ? "Fotografia cadastrada" :
-      "Sem fotografia";
+    return valor
+      ? "Fotografia cadastrada"
+      : "Sem fotografia";
   }
 
   if (typeof valor === "object") {
@@ -433,8 +449,11 @@ function textoValor(valor, campo = "") {
   return String(valor);
 }
 
+/* Data e hora corrigidas para o Brasil */
 function formatarData(valor) {
-  if (!valor) return "Data não informada";
+  if (!valor) {
+    return "Data não informada";
+  }
 
   const data = new Date(valor);
 
@@ -454,15 +473,25 @@ function formatarData(valor) {
 
 function elemento(tag, classe, texto) {
   const el = document.createElement(tag);
+
   if (classe) el.className = classe;
-  if (texto !== undefined) el.textContent = texto;
+
+  if (texto !== undefined) {
+    el.textContent = texto;
+  }
+
   return el;
 }
 
 function tipoOperacao(registro) {
-  const bruto = String(buscarCampo(registro, [
-    "operacao", "acao", "tipo_operacao", "operation"
-  ]) || "").toUpperCase();
+  const bruto = String(
+    buscarCampo(registro, [
+      "operacao",
+      "acao",
+      "tipo_operacao",
+      "operation"
+    ]) || ""
+  ).toUpperCase();
 
   if (bruto === "INSERT") return "Novo cadastro";
   if (bruto === "UPDATE") return "Alteração";
@@ -472,14 +501,21 @@ function tipoOperacao(registro) {
 }
 
 function identificarEntidade(registro, antes, depois) {
-  const tabela = String(buscarCampo(registro, [
-    "tabela", "nome_tabela", "table_name"
-  ]) || "").toLowerCase();
+  const tabela = String(
+    buscarCampo(registro, [
+      "tabela",
+      "nome_tabela",
+      "table_name"
+    ]) || ""
+  ).toLowerCase();
 
   const dados = depois || antes || {};
 
   const nome = dados.nome ||
-    buscarCampo(registro, ["nome", "nome_vendedor"]);
+    buscarCampo(registro, [
+      "nome",
+      "nome_vendedor"
+    ]);
 
   const classe = tabela.includes("produto")
     ? "Produto"
@@ -487,11 +523,15 @@ function identificarEntidade(registro, antes, depois) {
       ? "Vendedor"
       : "Registro";
 
+  const identificador = dados.id ||
+    buscarCampo(registro, [
+      "registro_id",
+      "id_registro"
+    ]);
+
   const titulo = nome
     ? `${classe}: ${nome}`
-    : `${classe} ${dados.id ||
-        buscarCampo(registro, ["registro_id", "id_registro"])
-        || ""}`.trim();
+    : `${classe} ${identificador || ""}`.trim();
 
   return {
     titulo,
@@ -509,7 +549,9 @@ function mudancas(antes, depois) {
   ])];
 
   const ignorar = new Set([
-    "id", "created_at", "updated_at"
+    "id",
+    "created_at",
+    "updated_at"
   ]);
 
   return campos.filter(campo => {
@@ -526,37 +568,67 @@ function mudancas(antes, depois) {
 
 function criarMudanca(mudanca, operacao) {
   const caixa = elemento("div", "mudanca");
+
   caixa.appendChild(
-    elemento("strong", "", nomeCampo(mudanca.campo))
+    elemento(
+      "strong",
+      "",
+      nomeCampo(mudanca.campo)
+    )
   );
 
-  const comparacao = elemento("div", "comparacao");
+  const comparacao = elemento(
+    "div",
+    "comparacao"
+  );
 
   if (operacao !== "Novo cadastro") {
     const antes = elemento("div", "valor");
+
     antes.appendChild(
       elemento("small", "", "Antes")
     );
+
     antes.appendChild(
-      elemento("span", "",
-        textoValor(mudanca.anterior, mudanca.campo))
+      elemento(
+        "span",
+        "",
+        textoValor(
+          mudanca.anterior,
+          mudanca.campo
+        )
+      )
     );
+
     comparacao.appendChild(antes);
   }
 
   if (operacao !== "Exclusão") {
-    const depois = elemento("div", "valor novo");
+    const depois = elemento(
+      "div",
+      "valor novo"
+    );
+
     depois.appendChild(
       elemento("small", "", "Depois")
     );
+
     depois.appendChild(
-      elemento("span", "",
-        textoValor(mudanca.novo, mudanca.campo))
+      elemento(
+        "span",
+        "",
+        textoValor(
+          mudanca.novo,
+          mudanca.campo
+        )
+      )
     );
+
     comparacao.appendChild(depois);
   }
 
   caixa.appendChild(comparacao);
+
   return caixa;
 }
 
@@ -564,45 +636,76 @@ function criarRegistro(registro) {
   const antes = dadosAntes(registro);
   const depois = dadosDepois(registro);
   const operacao = tipoOperacao(registro);
+
   const entidade = identificarEntidade(
-    registro, antes, depois
+    registro,
+    antes,
+    depois
   );
 
-  const cartao = elemento("article", "registro");
-  const topo = elemento("div", "registro-topo");
+  const cartao = elemento(
+    "article",
+    "registro"
+  );
 
+  const topo = elemento(
+    "div",
+    "registro-topo"
+  );
+
+  /*
+    Campo real confirmado na fotografia:
+    criado_em
+  */
   const data = buscarCampo(registro, [
-    "created_at", "data_hora",
-    "alterado_em", "data_alteracao",
-    "data", "timestamp"
+    "criado_em",
+    "created_at",
+    "data_hora",
+    "alterado_em",
+    "data_alteracao",
+    "data",
+    "timestamp"
   ]);
 
   topo.appendChild(
-    elemento("span", "data", formatarData(data))
+    elemento(
+      "span",
+      "data",
+      formatarData(data)
+    )
   );
+
   topo.appendChild(
-    elemento("span", "tipo", operacao)
+    elemento(
+      "span",
+      "tipo",
+      operacao
+    )
   );
 
   cartao.appendChild(topo);
+
   cartao.appendChild(
-    elemento("h3", "", entidade.titulo)
+    elemento(
+      "h3",
+      "",
+      entidade.titulo
+    )
   );
 
-  const identificacao = elemento(
-    "p", "subtitulo", entidade.tabela
+  /*
+    Exibe a tabela sem mostrar o UUID
+    comprido do usuário no cartão.
+    O identificador permanece disponível
+    em "Ver detalhes do registro".
+  */
+  cartao.appendChild(
+    elemento(
+      "p",
+      "subtitulo",
+      entidade.tabela
+    )
   );
-
-  const usuario = buscarCampo(registro, [
-    "usuario_id", "user_id", "alterado_por"
-  ]);
-
-  if (usuario) {
-    identificacao.textContent +=
-      " • Usuário: " + usuario;
-  }
-
-  cartao.appendChild(identificacao);
 
   let alteracoes = [];
 
@@ -611,13 +714,19 @@ function criarRegistro(registro) {
   } else if (operacao === "Exclusão") {
     alteracoes = mudancas(antes, null);
   } else {
-    alteracoes = mudancas(antes, depois);
+    alteracoes = mudancas(
+      antes,
+      depois
+    );
   }
 
   if (alteracoes.length) {
     alteracoes.forEach(mudanca => {
       cartao.appendChild(
-        criarMudanca(mudanca, operacao)
+        criarMudanca(
+          mudanca,
+          operacao
+        )
       );
     });
   } else {
@@ -625,21 +734,30 @@ function criarRegistro(registro) {
       elemento(
         "p",
         "subtitulo",
-        "Os campos modificados não puderam ser " +
-        "identificados automaticamente. " +
+        "Os campos modificados não puderam " +
+        "ser identificados automaticamente. " +
         "Consulte os detalhes abaixo."
       )
     );
   }
 
-  const detalhes = document.createElement("details");
+  const detalhes =
+    document.createElement("details");
+
   detalhes.appendChild(
-    elemento("summary", "", "Ver detalhes do registro")
+    elemento(
+      "summary",
+      "",
+      "Ver detalhes do registro"
+    )
   );
 
   const pre = elemento("pre");
+
   pre.textContent = JSON.stringify(
-    registro, null, 2
+    registro,
+    null,
+    2
   );
 
   detalhes.appendChild(pre);
@@ -654,6 +772,7 @@ function exibirHistorico(registros) {
   if (!registros.length) {
     mensagemHistorico.textContent =
       "Nenhuma alteração encontrada.";
+
     areaHistorico.hidden = true;
     return;
   }
@@ -665,15 +784,17 @@ function exibirHistorico(registros) {
   });
 
   areaHistorico.hidden = false;
+
   mensagemHistorico.textContent =
     registros.length +
     " registro(s) encontrado(s).";
 }
 
-/* Autenticação e funções administrativas existentes */
+/* Login e administração */
 
 if (!window.supabase) {
   mostrar("login");
+
   avisar(
     "Não foi possível carregar a conexão. " +
     "Atualize a página."
@@ -685,7 +806,9 @@ if (!window.supabase) {
   );
 
   const parametros =
-    new URLSearchParams(window.location.search);
+    new URLSearchParams(
+      window.location.search
+    );
 
   const fragmento =
     new URLSearchParams(
@@ -703,25 +826,33 @@ if (!window.supabase) {
   async function verificarAdmin() {
     const minhaVerificacao = ++verificacao;
 
-    const { data, error } = await db.auth.getUser();
+    const { data, error } =
+      await db.auth.getUser();
 
     if (minhaVerificacao !== verificacao ||
-        recuperacaoAtiva) return;
+        recuperacaoAtiva) {
+      return;
+    }
 
     if (error || !data.user) {
       mostrar("login");
       return;
     }
 
-    if (data.user.app_metadata?.role !== "admin") {
+    if (
+      data.user.app_metadata?.role !== "admin"
+    ) {
       await db.auth.signOut();
 
       if (recuperacaoAtiva) return;
 
       mostrar("login");
+
       avisar(
-        "Esta conta não possui autorização administrativa."
+        "Esta conta não possui " +
+        "autorização administrativa."
       );
+
       return;
     }
 
@@ -734,9 +865,12 @@ if (!window.supabase) {
     if (evento === "PASSWORD_RECOVERY") {
       recuperacaoAtiva = true;
       ++verificacao;
+
       mostrar("novaSenha");
+
       avisar(
-        "Escolha uma nova senha com pelo menos 12 caracteres."
+        "Escolha uma nova senha com " +
+        "pelo menos 12 caracteres."
       );
     } else if (evento === "SIGNED_OUT") {
       ++verificacao;
@@ -745,23 +879,30 @@ if (!window.supabase) {
   });
 
   $("formLogin").addEventListener(
-    "submit", async evento => {
+    "submit",
+    async evento => {
       evento.preventDefault();
+
       avisar("Verificando acesso...");
 
-      const email = $("email").value.trim();
-      const password = $("senha").value;
+      const email =
+        $("email").value.trim();
+
+      const password =
+        $("senha").value;
 
       const { error } =
         await db.auth.signInWithPassword({
-          email, password
+          email,
+          password
         });
 
       $("senha").value = "";
 
       if (error) {
         avisar(
-          "Não foi possível entrar. Confira e-mail e senha."
+          "Não foi possível entrar. " +
+          "Confira e-mail e senha."
         );
         return;
       }
@@ -771,12 +912,15 @@ if (!window.supabase) {
   );
 
   $("recuperar").addEventListener(
-    "click", async () => {
-      const email = $("email").value.trim();
+    "click",
+    async () => {
+      const email =
+        $("email").value.trim();
 
       if (!email) {
         avisar(
-          "Digite seu e-mail antes de recuperar a senha."
+          "Digite seu e-mail antes " +
+          "de recuperar a senha."
         );
         return;
       }
@@ -784,45 +928,56 @@ if (!window.supabase) {
       avisar("Solicitando recuperação...");
 
       const redirectTo = new URL(
-        "admin.html", window.location.href
+        "admin.html",
+        window.location.href
       ).href;
 
       const { error } =
         await db.auth.resetPasswordForEmail(
-          email, { redirectTo }
+          email,
+          { redirectTo }
         );
 
-      avisar(error
-        ? "Não foi possível solicitar a recuperação."
-        : "Se o e-mail estiver cadastrado, " +
-          "você receberá instruções."
+      avisar(
+        error
+          ? "Não foi possível solicitar " +
+            "a recuperação."
+          : "Se o e-mail estiver cadastrado, " +
+            "você receberá instruções."
       );
     }
   );
 
   $("formSenha").addEventListener(
-    "submit", async evento => {
+    "submit",
+    async evento => {
       evento.preventDefault();
 
       if (!recuperacaoAtiva) {
         avisar(
-          "Solicite um novo link de recuperação de senha."
+          "Solicite um novo link de " +
+          "recuperação de senha."
         );
         return;
       }
 
-      const password = $("senhaNova").value;
+      const password =
+        $("senhaNova").value;
+
       avisar("Salvando nova senha...");
 
       const { error } =
-        await db.auth.updateUser({ password });
+        await db.auth.updateUser({
+          password
+        });
 
       $("senhaNova").value = "";
 
       if (error) {
         avisar(
-          "Não foi possível salvar a nova senha. " +
-          "Solicite outro link se necessário."
+          "Não foi possível salvar " +
+          "a nova senha. Solicite " +
+          "outro link se necessário."
         );
         return;
       }
@@ -831,11 +986,14 @@ if (!window.supabase) {
       ++verificacao;
 
       history.replaceState(
-        null, "", window.location.pathname
+        null,
+        "",
+        window.location.pathname
       );
 
       avisar(
-        "Senha atualizada. Verificando autorização..."
+        "Senha atualizada. " +
+        "Verificando autorização..."
       );
 
       await verificarAdmin();
@@ -843,20 +1001,29 @@ if (!window.supabase) {
   );
 
   $("formVendedor").addEventListener(
-    "submit", async evento => {
+    "submit",
+    async evento => {
       evento.preventDefault();
 
       if (!administradorAutorizado) {
         mensagemCadastro.textContent =
-          "Acesso administrativo não autorizado.";
+          "Acesso administrativo " +
+          "não autorizado.";
         return;
       }
 
-      const nome = $("nomeVendedor").value.trim();
-      const bairro = $("bairroVendedor").value.trim();
+      const nome =
+        $("nomeVendedor").value.trim();
+
+      const bairro =
+        $("bairroVendedor").value.trim();
+
       const endereco =
         $("enderecoVendedor").value.trim();
-      const preco = Number($("precoVendedor").value);
+
+      const preco = Number(
+        $("precoVendedor").value
+      );
 
       const whatsapp = normalizarTelefone(
         $("whatsappVendedor").value
@@ -869,27 +1036,40 @@ if (!window.supabase) {
         ? normalizarTelefone(segundoValor)
         : null;
 
-      if (!nome || !bairro || !endereco ||
-          !Number.isFinite(preco) || preco <= 0) {
+      if (
+        !nome ||
+        !bairro ||
+        !endereco ||
+        !Number.isFinite(preco) ||
+        preco <= 0
+      ) {
         mensagemCadastro.textContent =
-          "Preencha corretamente os dados do vendedor.";
+          "Preencha corretamente os " +
+          "dados do vendedor.";
         return;
       }
 
-      if (!whatsapp ||
-          (segundoValor && !whatsapp2)) {
+      if (
+        !whatsapp ||
+        (segundoValor && !whatsapp2)
+      ) {
         mensagemCadastro.textContent =
           "Informe um WhatsApp válido com DDD.";
         return;
       }
 
-      if (whatsapp2 && whatsapp2 === whatsapp) {
+      if (
+        whatsapp2 &&
+        whatsapp2 === whatsapp
+      ) {
         mensagemCadastro.textContent =
-          "O segundo WhatsApp deve ser diferente do primeiro.";
+          "O segundo WhatsApp deve ser " +
+          "diferente do primeiro.";
         return;
       }
 
       botaoSalvar.disabled = true;
+
       mensagemCadastro.textContent =
         "Salvando vendedor...";
 
@@ -899,13 +1079,17 @@ if (!window.supabase) {
           error: erroUsuario
         } = await db.auth.getUser();
 
-        if (erroUsuario || !usuario.user ||
-            usuario.user.app_metadata?.role !== "admin") {
+        if (
+          erroUsuario ||
+          !usuario.user ||
+          usuario.user.app_metadata?.role !== "admin"
+        ) {
           administradorAutorizado = false;
           mostrar("login");
+
           mensagemCadastro.textContent =
-            "Sua autorização precisa ser " +
-            "verificada novamente.";
+            "Sua autorização precisa " +
+            "ser verificada novamente.";
           return;
         }
 
@@ -921,23 +1105,30 @@ if (!window.supabase) {
 
         if (error) {
           console.error(
-            "Erro ao cadastrar vendedor:", error
+            "Erro ao cadastrar vendedor:",
+            error
           );
 
           mensagemCadastro.textContent =
-            "Não foi possível salvar. Confira " +
-            "as permissões e os dados no Supabase.";
+            "Não foi possível salvar. " +
+            "Confira as permissões e " +
+            "os dados no Supabase.";
           return;
         }
 
         $("formVendedor").reset();
+
         mensagemCadastro.textContent =
           "Vendedor cadastrado com sucesso!";
       } catch (erro) {
-        console.error("Falha de conexão:", erro);
+        console.error(
+          "Falha de conexão:",
+          erro
+        );
+
         mensagemCadastro.textContent =
-          "Falha de conexão. Verifique a internet " +
-          "e tente novamente.";
+          "Falha de conexão. Verifique " +
+          "a internet e tente novamente.";
       } finally {
         botaoSalvar.disabled = false;
       }
@@ -945,10 +1136,12 @@ if (!window.supabase) {
   );
 
   botaoHistorico.addEventListener(
-    "click", async () => {
+    "click",
+    async () => {
       if (!administradorAutorizado) {
         mensagemHistorico.textContent =
-          "Acesso administrativo não autorizado.";
+          "Acesso administrativo " +
+          "não autorizado.";
         return;
       }
 
@@ -966,44 +1159,64 @@ if (!window.supabase) {
           error: erroUsuario
         } = await db.auth.getUser();
 
-        if (minhaConsulta !== consultaAtual) return;
+        if (
+          minhaConsulta !== consultaAtual
+        ) {
+          return;
+        }
 
-        if (erroUsuario || !usuario.user ||
-            usuario.user.app_metadata?.role !== "admin") {
+        if (
+          erroUsuario ||
+          !usuario.user ||
+          usuario.user.app_metadata?.role !== "admin"
+        ) {
           mostrar("login");
+
           avisar(
-            "Sua autorização precisa ser " +
-            "verificada novamente."
+            "Sua autorização precisa " +
+            "ser verificada novamente."
           );
           return;
         }
 
         const { data, error } =
-          await db.rpc("consultar_historico_admin");
+          await db.rpc(
+            "consultar_historico_admin"
+          );
 
-        if (minhaConsulta !== consultaAtual ||
-            !administradorAutorizado) return;
+        if (
+          minhaConsulta !== consultaAtual ||
+          !administradorAutorizado
+        ) {
+          return;
+        }
 
         if (error) {
           console.error(
-            "Erro ao consultar histórico:", error
+            "Erro ao consultar histórico:",
+            error
           );
 
           mensagemHistorico.textContent =
-            "Não foi possível consultar o histórico. " +
-            "Verifique as permissões no Supabase.";
+            "Não foi possível consultar " +
+            "o histórico. Verifique as " +
+            "permissões no Supabase.";
           return;
         }
 
         exibirHistorico(data || []);
       } catch (erro) {
         console.error(
-          "Falha ao consultar histórico:", erro
+          "Falha ao consultar histórico:",
+          erro
         );
 
-        if (minhaConsulta === consultaAtual) {
+        if (
+          minhaConsulta === consultaAtual
+        ) {
           mensagemHistorico.textContent =
-            "Falha de conexão ao consultar o histórico.";
+            "Falha de conexão ao " +
+            "consultar o histórico.";
         }
       } finally {
         botaoHistorico.disabled = false;
@@ -1012,23 +1225,31 @@ if (!window.supabase) {
   );
 
   $("sair").addEventListener(
-    "click", async () => {
+    "click",
+    async () => {
       recuperacaoAtiva = false;
       ++verificacao;
+
       administradorAutorizado = false;
       limparHistorico();
 
       await db.auth.signOut();
 
       mostrar("login");
-      avisar("Você saiu da Área Administrativa.");
+
+      avisar(
+        "Você saiu da Área Administrativa."
+      );
     }
   );
 
   async function iniciar() {
     if (retornoRecuperacao) {
       mostrar("novaSenha");
-      avisar("Validando link de recuperação...");
+
+      avisar(
+        "Validando link de recuperação..."
+      );
     }
 
     const { data, error } =
@@ -1038,17 +1259,20 @@ if (!window.supabase) {
       if (error || !data.session) {
         mostrar("login");
         recuperacaoAtiva = false;
+
         avisar(
-          "O link de recuperação não foi validado. " +
-          "Solicite um novo link."
+          "O link de recuperação não " +
+          "foi validado. Solicite um novo link."
         );
       } else {
         mostrar("novaSenha");
+
         avisar(
-          "Escolha uma nova senha com pelo " +
-          "menos 12 caracteres."
+          "Escolha uma nova senha com " +
+          "pelo menos 12 caracteres."
         );
       }
+
       return;
     }
 
