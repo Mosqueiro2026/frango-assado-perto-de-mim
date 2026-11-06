@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -13,13 +14,13 @@
     }
     main {
       background: white;
-      max-width: 480px;
+      max-width: 850px;
       margin: 35px auto;
       padding: 25px;
       border-radius: 12px;
       box-shadow: 0 3px 14px #00000012;
     }
-    h1 { color: #b45309; }
+    h1, h3 { color: #b45309; }
     input, button {
       box-sizing: border-box;
       display: block;
@@ -37,7 +38,7 @@
       cursor: pointer;
     }
     button:disabled { opacity: .6; }
-    #mensagem, #mensagemCadastro {
+    #mensagem, #mensagemCadastro, #mensagemHistorico {
       overflow-wrap: anywhere;
     }
     [hidden] { display: none !important; }
@@ -51,6 +52,32 @@
       font-weight: bold;
       margin-top: 12px;
     }
+    .tabela-container {
+      width: 100%;
+      overflow-x: auto;
+      margin-top: 15px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 14px;
+    }
+    th, td {
+      border: 1px solid #e7e5e4;
+      padding: 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th { background: #ffedd5; }
+    td.dados {
+      min-width: 180px;
+      max-width: 300px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .secundario { background: #57534e; }
   </style>
 </head>
 <body>
@@ -62,12 +89,18 @@
     <section id="login" hidden>
       <form id="formLogin">
         <label for="email">E-mail</label>
-        <input id="email" type="email" autocomplete="username" required>
+        <input id="email" type="email"
+          autocomplete="username" required>
+
         <label for="senha">Senha</label>
-        <input id="senha" type="password" autocomplete="current-password" required>
+        <input id="senha" type="password"
+          autocomplete="current-password" required>
+
         <button type="submit">Entrar</button>
       </form>
-      <button id="recuperar" type="button">Esqueci minha senha</button>
+      <button id="recuperar" type="button">
+        Esqueci minha senha
+      </button>
     </section>
 
     <section id="novaSenha" hidden>
@@ -75,7 +108,8 @@
       <form id="formSenha">
         <label for="senhaNova">Nova senha</label>
         <input id="senhaNova" type="password"
-          autocomplete="new-password" minlength="12" required>
+          autocomplete="new-password"
+          minlength="12" required>
         <button type="submit">Salvar nova senha</button>
       </form>
     </section>
@@ -89,23 +123,30 @@
       <h2>Cadastrar vendedor</h2>
       <form id="formVendedor">
         <label for="nomeVendedor">Nome do vendedor</label>
-        <input id="nomeVendedor" type="text" maxlength="150" required>
+        <input id="nomeVendedor" type="text"
+          maxlength="150" required>
 
         <label for="bairroVendedor">Bairro</label>
-        <input id="bairroVendedor" type="text" maxlength="150" required>
+        <input id="bairroVendedor" type="text"
+          maxlength="150" required>
 
         <label for="precoVendedor">Preço (R$)</label>
         <input id="precoVendedor" type="number"
           min="0.01" step="0.01" required>
 
         <label for="enderecoVendedor">Endereço</label>
-        <input id="enderecoVendedor" type="text" maxlength="300" required>
+        <input id="enderecoVendedor" type="text"
+          maxlength="300" required>
 
-        <label for="whatsappVendedor">WhatsApp 1 (obrigatório)</label>
+        <label for="whatsappVendedor">
+          WhatsApp 1 (obrigatório)
+        </label>
         <input id="whatsappVendedor" type="tel"
           placeholder="12999999999" required>
 
-        <label for="whatsapp2Vendedor">WhatsApp 2 (opcional)</label>
+        <label for="whatsapp2Vendedor">
+          WhatsApp 2 (opcional)
+        </label>
         <input id="whatsapp2Vendedor" type="tel"
           placeholder="Se tiver outro número">
 
@@ -114,11 +155,38 @@
         </button>
       </form>
 
-      <p id="mensagemCadastro" role="status" aria-live="polite"></p>
+      <p id="mensagemCadastro"
+        role="status" aria-live="polite"></p>
 
       <hr>
 
-      <button id="sair" type="button">Sair</button>
+      <h2>📋 Histórico de alterações</h2>
+      <p>
+        Consulte os últimos 100 registros de alterações
+        de vendedores e produtos.
+      </p>
+
+      <button id="consultarHistorico" type="button">
+        Consultar histórico de alterações
+      </button>
+
+      <p id="mensagemHistorico"
+        role="status" aria-live="polite"></p>
+
+      <div id="areaHistorico" hidden>
+        <div class="tabela-container">
+          <table>
+            <thead id="cabecalhoHistorico"></thead>
+            <tbody id="corpoHistorico"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <hr>
+
+      <button id="sair" class="secundario" type="button">
+        Sair
+      </button>
     </section>
 
     <p id="mensagem" role="status" aria-live="polite">
@@ -128,20 +196,42 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <script>
-    const URL_SUPABASE = "https://mublqamdknlkrhtzzwfj.supabase.co";
-    const CHAVE_PUBLICA = "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
+    const URL_SUPABASE =
+      "https://mublqamdknlkrhtzzwfj.supabase.co";
+
+    const CHAVE_PUBLICA =
+      "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
 
     const login = document.getElementById("login");
     const painel = document.getElementById("painel");
     const novaSenha = document.getElementById("novaSenha");
     const mensagem = document.getElementById("mensagem");
-    const mensagemCadastro = document.getElementById("mensagemCadastro");
-    const botaoSalvar = document.getElementById("salvarVendedor");
+    const mensagemCadastro =
+      document.getElementById("mensagemCadastro");
+    const mensagemHistorico =
+      document.getElementById("mensagemHistorico");
+    const botaoSalvar =
+      document.getElementById("salvarVendedor");
+    const botaoHistorico =
+      document.getElementById("consultarHistorico");
+    const areaHistorico =
+      document.getElementById("areaHistorico");
 
     let administradorAutorizado = false;
 
     function avisar(texto) {
       mensagem.textContent = texto;
+    }
+
+    function limparHistorico() {
+      areaHistorico.hidden = true;
+      document.getElementById(
+        "cabecalhoHistorico"
+      ).replaceChildren();
+      document.getElementById(
+        "corpoHistorico"
+      ).replaceChildren();
+      mensagemHistorico.textContent = "";
     }
 
     function mostrar(secao) {
@@ -151,13 +241,15 @@
 
       if (secao !== "painel") {
         administradorAutorizado = false;
+        limparHistorico();
       }
     }
 
     function normalizarTelefone(valor) {
       let numero = valor.replace(/\D/g, "");
 
-      if (numero.startsWith("55") && numero.length > 11) {
+      if (numero.startsWith("55") &&
+          numero.length > 11) {
         numero = numero.substring(2);
       }
 
@@ -168,16 +260,101 @@
       return numero;
     }
 
-    if (!window.supabase) {
-      mostrar("login");
-      avisar("Não foi possível carregar a conexão. Atualize a página.");
-    } else {
-      const db = window.supabase.createClient(
-        URL_SUPABASE, CHAVE_PUBLICA
+    function formatarValor(valor) {
+      if (valor === null || valor === undefined) {
+        return "";
+      }
+
+      if (typeof valor === "object") {
+        return JSON.stringify(valor, null, 2);
+      }
+
+      return String(valor);
+    }
+
+    function exibirHistorico(registros) {
+      const cabecalho = document.getElementById(
+        "cabecalhoHistorico"
+      );
+      const corpo = document.getElementById(
+        "corpoHistorico"
       );
 
-      const parametros = new URLSearchParams(window.location.search);
-      const fragmento = new URLSearchParams(window.location.hash.substring(1));
+      cabecalho.replaceChildren();
+      corpo.replaceChildren();
+
+      if (!registros.length) {
+        mensagemHistorico.textContent =
+          "Nenhuma alteração encontrada.";
+        areaHistorico.hidden = true;
+        return;
+      }
+
+      const colunas = [
+        ...new Set(
+          registros.flatMap(registro =>
+            Object.keys(registro)
+          )
+        )
+      ];
+
+      const linhaCabecalho =
+        document.createElement("tr");
+
+      colunas.forEach(coluna => {
+        const th = document.createElement("th");
+        th.textContent = coluna.replace(/_/g, " ");
+        linhaCabecalho.appendChild(th);
+      });
+
+      cabecalho.appendChild(linhaCabecalho);
+
+      registros.forEach(registro => {
+        const linha = document.createElement("tr");
+
+        colunas.forEach(coluna => {
+          const td = document.createElement("td");
+          const valor = registro[coluna];
+
+          td.textContent = formatarValor(valor);
+
+          if (typeof valor === "object" &&
+              valor !== null) {
+            td.className = "dados";
+          }
+
+          linha.appendChild(td);
+        });
+
+        corpo.appendChild(linha);
+      });
+
+      areaHistorico.hidden = false;
+      mensagemHistorico.textContent =
+        registros.length +
+        " registro(s) encontrado(s).";
+    }
+
+    if (!window.supabase) {
+      mostrar("login");
+      avisar(
+        "Não foi possível carregar a conexão. " +
+        "Atualize a página."
+      );
+    } else {
+      const db = window.supabase.createClient(
+        URL_SUPABASE,
+        CHAVE_PUBLICA
+      );
+
+      const parametros =
+        new URLSearchParams(window.location.search);
+
+      const fragmento =
+        new URLSearchParams(
+          window.location.hash.substring(1)
+        );
+
       const retornoRecuperacao =
         parametros.get("type") === "recovery" ||
         fragmento.get("type") === "recovery" ||
@@ -188,9 +365,14 @@
 
       async function verificarAdmin() {
         const minhaVerificacao = ++verificacao;
-        const { data, error } = await db.auth.getUser();
 
-        if (minhaVerificacao !== verificacao || recuperacaoAtiva) return;
+        const { data, error } =
+          await db.auth.getUser();
+
+        if (minhaVerificacao !== verificacao ||
+            recuperacaoAtiva) {
+          return;
+        }
 
         if (error || !data.user) {
           mostrar("login");
@@ -203,7 +385,9 @@
           if (recuperacaoAtiva) return;
 
           mostrar("login");
-          avisar("Esta conta não possui autorização administrativa.");
+          avisar(
+            "Esta conta não possui autorização administrativa."
+          );
           return;
         }
 
@@ -217,7 +401,10 @@
           recuperacaoAtiva = true;
           ++verificacao;
           mostrar("novaSenha");
-          avisar("Escolha uma nova senha com pelo menos 12 caracteres.");
+          avisar(
+            "Escolha uma nova senha com pelo menos " +
+            "12 caracteres."
+          );
         } else if (evento === "SIGNED_OUT") {
           ++verificacao;
           mostrar("login");
@@ -229,17 +416,29 @@
           evento.preventDefault();
           avisar("Verificando acesso...");
 
-          const email = document.getElementById("email").value.trim();
-          const password = document.getElementById("senha").value;
+          const email = document.getElementById(
+            "email"
+          ).value.trim();
 
-          const { error } = await db.auth.signInWithPassword({
-            email, password
-          });
+          const password = document.getElementById(
+            "senha"
+          ).value;
 
-          document.getElementById("senha").value = "";
+          const { error } =
+            await db.auth.signInWithPassword({
+              email,
+              password
+            });
+
+          document.getElementById(
+            "senha"
+          ).value = "";
 
           if (error) {
-            avisar("Não foi possível entrar. Confira e-mail e senha.");
+            avisar(
+              "Não foi possível entrar. " +
+              "Confira e-mail e senha."
+            );
             return;
           }
 
@@ -248,26 +447,37 @@
 
       document.getElementById("recuperar")
         .addEventListener("click", async () => {
-          const email = document.getElementById("email").value.trim();
+          const email = document.getElementById(
+            "email"
+          ).value.trim();
 
           if (!email) {
-            avisar("Digite seu e-mail antes de recuperar a senha.");
+            avisar(
+              "Digite seu e-mail antes de " +
+              "recuperar a senha."
+            );
             return;
           }
 
           avisar("Solicitando recuperação...");
 
           const redirectTo = new URL(
-            "admin.html", window.location.href
+            "admin.html",
+            window.location.href
           ).href;
 
-          const { error } = await db.auth.resetPasswordForEmail(
-            email, { redirectTo }
-          );
+          const { error } =
+            await db.auth.resetPasswordForEmail(
+              email,
+              { redirectTo }
+            );
 
-          avisar(error
-            ? "Não foi possível solicitar a recuperação."
-            : "Se o e-mail estiver cadastrado, você receberá instruções.");
+          avisar(
+            error
+              ? "Não foi possível solicitar a recuperação."
+              : "Se o e-mail estiver cadastrado, " +
+                "você receberá instruções."
+          );
         });
 
       document.getElementById("formSenha")
@@ -275,25 +485,47 @@
           evento.preventDefault();
 
           if (!recuperacaoAtiva) {
-            avisar("Solicite um novo link de recuperação de senha.");
+            avisar(
+              "Solicite um novo link de " +
+              "recuperação de senha."
+            );
             return;
           }
 
-          const password = document.getElementById("senhaNova").value;
+          const password = document.getElementById(
+            "senhaNova"
+          ).value;
+
           avisar("Salvando nova senha...");
 
-          const { error } = await db.auth.updateUser({ password });
-          document.getElementById("senhaNova").value = "";
+          const { error } =
+            await db.auth.updateUser({ password });
+
+          document.getElementById(
+            "senhaNova"
+          ).value = "";
 
           if (error) {
-            avisar("Não foi possível salvar a nova senha. Solicite outro link se necessário.");
+            avisar(
+              "Não foi possível salvar a nova senha. " +
+              "Solicite outro link se necessário."
+            );
             return;
           }
 
           recuperacaoAtiva = false;
           ++verificacao;
-          history.replaceState(null, "", window.location.pathname);
-          avisar("Senha atualizada. Verificando autorização...");
+
+          history.replaceState(
+            null,
+            "",
+            window.location.pathname
+          );
+
+          avisar(
+            "Senha atualizada. Verificando autorização..."
+          );
+
           await verificarAdmin();
         });
 
@@ -307,20 +539,34 @@
             return;
           }
 
-          const nome = document.getElementById("nomeVendedor").value.trim();
-          const bairro = document.getElementById("bairroVendedor").value.trim();
-          const endereco = document.getElementById("enderecoVendedor").value.trim();
+          const nome = document.getElementById(
+            "nomeVendedor"
+          ).value.trim();
+
+          const bairro = document.getElementById(
+            "bairroVendedor"
+          ).value.trim();
+
+          const endereco = document.getElementById(
+            "enderecoVendedor"
+          ).value.trim();
+
           const preco = Number(
-            document.getElementById("precoVendedor").value
+            document.getElementById(
+              "precoVendedor"
+            ).value
           );
 
           const whatsapp = normalizarTelefone(
-            document.getElementById("whatsappVendedor").value
+            document.getElementById(
+              "whatsappVendedor"
+            ).value
           );
 
-          const segundoValor = document.getElementById(
-            "whatsapp2Vendedor"
-          ).value.trim();
+          const segundoValor =
+            document.getElementById(
+              "whatsapp2Vendedor"
+            ).value.trim();
 
           const whatsapp2 = segundoValor
             ? normalizarTelefone(segundoValor)
@@ -333,7 +579,8 @@
             return;
           }
 
-          if (!whatsapp || (segundoValor && !whatsapp2)) {
+          if (!whatsapp ||
+              (segundoValor && !whatsapp2)) {
             mensagemCadastro.textContent =
               "Informe um WhatsApp válido com DDD.";
             return;
@@ -346,57 +593,142 @@
           }
 
           botaoSalvar.disabled = true;
-          mensagemCadastro.textContent = "Salvando vendedor...";
+          mensagemCadastro.textContent =
+            "Salvando vendedor...";
 
           try {
-            const { data: usuario, error: erroUsuario } =
-              await db.auth.getUser();
+            const {
+              data: usuario,
+              error: erroUsuario
+            } = await db.auth.getUser();
 
             if (erroUsuario || !usuario.user ||
                 usuario.user.app_metadata?.role !== "admin") {
               administradorAutorizado = false;
               mostrar("login");
               mensagemCadastro.textContent =
-                "Sua autorização precisa ser verificada novamente.";
+                "Sua autorização precisa ser " +
+                "verificada novamente.";
               return;
             }
 
-            const { error } = await db.from("vendedores").insert({
-              nome,
-              bairro,
-              preco,
-              endereco,
-              whatsapp,
-              whatsapp2
-            });
+            const { error } =
+              await db.from("vendedores").insert({
+                nome,
+                bairro,
+                preco,
+                endereco,
+                whatsapp,
+                whatsapp2
+              });
 
             if (error) {
-              console.error("Erro ao cadastrar vendedor:", error);
+              console.error(
+                "Erro ao cadastrar vendedor:",
+                error
+              );
+
               mensagemCadastro.textContent =
-                "Não foi possível salvar. Confira as permissões e os dados no Supabase.";
+                "Não foi possível salvar. Confira " +
+                "as permissões e os dados no Supabase.";
               return;
             }
 
-            document.getElementById("formVendedor").reset();
+            document.getElementById(
+              "formVendedor"
+            ).reset();
+
             mensagemCadastro.textContent =
               "Vendedor cadastrado com sucesso!";
           } catch (erro) {
             console.error("Falha de conexão:", erro);
+
             mensagemCadastro.textContent =
-              "Falha de conexão. Verifique a internet e tente novamente.";
+              "Falha de conexão. Verifique a " +
+              "internet e tente novamente.";
           } finally {
             botaoSalvar.disabled = false;
           }
         });
+
+      botaoHistorico.addEventListener(
+        "click",
+        async () => {
+          if (!administradorAutorizado) {
+            mensagemHistorico.textContent =
+              "Acesso administrativo não autorizado.";
+            return;
+          }
+
+          botaoHistorico.disabled = true;
+          limparHistorico();
+          mensagemHistorico.textContent =
+            "Consultando histórico...";
+
+          try {
+            const {
+              data: usuario,
+              error: erroUsuario
+            } = await db.auth.getUser();
+
+            if (erroUsuario || !usuario.user ||
+                usuario.user.app_metadata?.role !== "admin") {
+              mostrar("login");
+              avisar(
+                "Sua autorização precisa ser " +
+                "verificada novamente."
+              );
+              return;
+            }
+
+            const { data, error } =
+              await db.rpc(
+                "consultar_historico_admin"
+              );
+
+            if (error) {
+              console.error(
+                "Erro ao consultar histórico:",
+                error
+              );
+
+              mensagemHistorico.textContent =
+                "Não foi possível consultar o " +
+                "histórico. Verifique as " +
+                "permissões no Supabase.";
+              return;
+            }
+
+            if (!administradorAutorizado) return;
+
+            exibirHistorico(data || []);
+          } catch (erro) {
+            console.error(
+              "Falha ao consultar histórico:",
+              erro
+            );
+
+            mensagemHistorico.textContent =
+              "Falha de conexão ao consultar " +
+              "o histórico.";
+          } finally {
+            botaoHistorico.disabled = false;
+          }
+        }
+      );
 
       document.getElementById("sair")
         .addEventListener("click", async () => {
           recuperacaoAtiva = false;
           ++verificacao;
           administradorAutorizado = false;
+
           await db.auth.signOut();
+
           mostrar("login");
-          avisar("Você saiu da Área Administrativa.");
+          avisar(
+            "Você saiu da Área Administrativa."
+          );
         });
 
       async function iniciar() {
@@ -405,17 +737,27 @@
           avisar("Validando link de recuperação...");
         }
 
-        const { data, error } = await db.auth.getSession();
+        const { data, error } =
+          await db.auth.getSession();
 
         if (recuperacaoAtiva) {
           if (error || !data.session) {
             mostrar("login");
             recuperacaoAtiva = false;
-            avisar("O link de recuperação não foi validado. Solicite um novo link.");
+
+            avisar(
+              "O link de recuperação não foi " +
+              "validado. Solicite um novo link."
+            );
           } else {
             mostrar("novaSenha");
-            avisar("Escolha uma nova senha com pelo menos 12 caracteres.");
+
+            avisar(
+              "Escolha uma nova senha com pelo " +
+              "menos 12 caracteres."
+            );
           }
+
           return;
         }
 
