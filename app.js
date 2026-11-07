@@ -1,8 +1,8 @@
 
 /*
-  Frango Assado Perto de Mim
-  Catalogo, fotos, avaliacoes, pedidos e proximidade.
-  Administracao e vendedores permanecem separados.
+  FRANGO ASSADO PERTO DE MIM
+  Catalogo, fotos, avaliacoes, pedidos,
+  busca por bairro e proximidade.
 */
 
 const SUPABASE_URL =
@@ -17,6 +17,7 @@ let vendedores = [];
 let produtos = [];
 let avaliacoes = [];
 let bairroSelecionado = "Todos";
+let pesquisaBairro = "";
 let localizacaoCliente = null;
 let buscaPorProximidade = false;
 
@@ -53,6 +54,15 @@ function normalizarTelefone(valor) {
   }
 
   return /^\d{10,11}$/.test(numero) ? numero : null;
+}
+
+function normalizarBairro(valor) {
+  return String(valor ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("pt-BR");
 }
 
 function criarContato(valor, identificacao) {
@@ -279,9 +289,7 @@ function criarBotoesAvaliacao(produto) {
   `;
 }
 
-/*
-  LOCALIZACAO E PROXIMIDADE
-*/
+/* LOCALIZACAO E PROXIMIDADE */
 
 function coordenadaValida(latitude, longitude) {
   if (
@@ -370,12 +378,91 @@ function mostrarDistancia(vendedor) {
   `;
 }
 
+/* BUSCA POR BAIRRO */
+
+function atualizarSugestoesBairros() {
+  const listaBairros =
+    document.getElementById("bairrosDisponiveis");
+
+  if (!listaBairros) return;
+
+  const nomes = [...new Set(
+    vendedores
+      .map(v => String(v.bairro || "").trim())
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "pt-BR"));
+
+  listaBairros.replaceChildren();
+
+  for (const nome of nomes) {
+    const opcao = document.createElement("option");
+    opcao.value = nome;
+    listaBairros.appendChild(opcao);
+  }
+}
+
+function limparProximidade() {
+  buscaPorProximidade = false;
+  localizacaoCliente = null;
+
+  const limpar =
+    document.getElementById("botaoLimparProximidade");
+
+  const mensagem =
+    document.getElementById("mensagemProximidade");
+
+  if (limpar) limpar.hidden = true;
+  if (mensagem) mensagem.textContent = "";
+}
+
+function buscarBairroDigitado() {
+  const campo =
+    document.getElementById("campoBuscaBairro");
+
+  const aviso =
+    document.getElementById("mensagemBuscaBairro");
+
+  if (!campo) return;
+
+  const termo = normalizarBairro(campo.value);
+
+  if (!termo) {
+    if (aviso) {
+      aviso.textContent =
+        "Digite o nome de um bairro.";
+    }
+
+    campo.focus();
+    return;
+  }
+
+  pesquisaBairro = termo;
+  bairroSelecionado = "Todos";
+
+  limparProximidade();
+  renderizar();
+
+  const quantidade = vendedores.filter(v =>
+    normalizarBairro(v.bairro).includes(termo)
+  ).length;
+
+  if (aviso) {
+    aviso.textContent = quantidade
+      ? `${quantidade} vendedor(es) encontrado(s).`
+      : "Ainda não há vendedores cadastrados nesse bairro.";
+  }
+}
+
+/* BOTAO VENDEDORES PERTO DE MIM */
+
 function prepararBuscaProximidade() {
-  const secaoBairros = document.querySelector(".bairros");
+  const secaoBairros =
+    document.querySelector(".bairros");
 
   if (!secaoBairros) return;
 
   const area = document.createElement("div");
+
   area.id = "areaProximidade";
   area.style.margin = "16px 0";
   area.style.padding = "12px";
@@ -384,11 +471,6 @@ function prepararBuscaProximidade() {
 
   area.innerHTML = `
     <h3>📍 Vendedores perto de mim</h3>
-
-    <p>
-      Encontre os vendedores mais próximos,
-      usando a localização do seu aparelho.
-    </p>
 
     <button type="button" id="botaoProximidade">
       📍 Encontrar vendedores perto de mim
@@ -405,15 +487,16 @@ function prepararBuscaProximidade() {
        aria-live="polite"></p>
   `;
 
-  secaoBairros.appendChild(area);
+  secaoBairros.prepend(area);
 
-  const botao = document.getElementById("botaoProximidade");
-  const limpar = document.getElementById(
-    "botaoLimparProximidade"
-  );
-  const mensagem = document.getElementById(
-    "mensagemProximidade"
-  );
+  const botao =
+    document.getElementById("botaoProximidade");
+
+  const limpar =
+    document.getElementById("botaoLimparProximidade");
+
+  const mensagem =
+    document.getElementById("mensagemProximidade");
 
   botao.addEventListener("click", () => {
     if (!navigator.geolocation) {
@@ -423,6 +506,7 @@ function prepararBuscaProximidade() {
     }
 
     botao.disabled = true;
+
     mensagem.textContent =
       "Aguardando autorização para consultar sua localização...";
 
@@ -435,6 +519,16 @@ function prepararBuscaProximidade() {
 
         buscaPorProximidade = true;
         bairroSelecionado = "Todos";
+        pesquisaBairro = "";
+
+        const campo =
+          document.getElementById("campoBuscaBairro");
+
+        const aviso =
+          document.getElementById("mensagemBuscaBairro");
+
+        if (campo) campo.value = "";
+        if (aviso) aviso.textContent = "";
 
         mensagem.textContent =
           "Vendedores organizados pela distância aproximada. " +
@@ -474,8 +568,10 @@ function prepararBuscaProximidade() {
     localizacaoCliente = null;
     buscaPorProximidade = false;
     bairroSelecionado = "Todos";
+    pesquisaBairro = "";
 
     limpar.hidden = true;
+
     mensagem.textContent =
       "Busca por proximidade desativada.";
 
@@ -483,9 +579,7 @@ function prepararBuscaProximidade() {
   });
 }
 
-/*
-  PRODUTOS E VENDEDORES
-*/
+/* PRODUTOS E VENDEDORES */
 
 function renderizarProdutos(vendedor) {
   const itens = produtos.filter(
@@ -547,144 +641,31 @@ function renderizarProdutos(vendedor) {
   `;
 }
 
-/* =========================================
-   BUSCA DINÂMICA POR BAIRRO
-   ========================================= */
-
-const campoBuscaBairro =
-  document.getElementById("campoBuscaBairro");
-
-const botaoBuscarBairro =
-  document.getElementById("botaoBuscarBairro");
-
-const bairrosDisponiveis =
-  document.getElementById("bairrosDisponiveis");
-
-const mensagemBuscaBairro =
-  document.getElementById("mensagemBuscaBairro");
-
-function normalizarNomeBairro(valor) {
-  return String(valor || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toLocaleLowerCase("pt-BR");
-}
-
-function atualizarBairrosDisponiveis() {
-  if (!bairrosDisponiveis) return;
-
-  const bairros = [...new Set(
-    vendedores
-      .map(vendedor => String(vendedor.bairro || "").trim())
-      .filter(Boolean)
-  )].sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-  bairrosDisponiveis.replaceChildren();
-
-  bairros.forEach(bairro => {
-    const opcao = document.createElement("option");
-    opcao.value = bairro;
-    bairrosDisponiveis.appendChild(opcao);
-  });
-}
-
-function pesquisarBairro() {
-  if (!campoBuscaBairro) return;
-
-  const pesquisa = normalizarNomeBairro(
-    campoBuscaBairro.value
-  );
-
-  if (!pesquisa) {
-    mensagemBuscaBairro.textContent =
-      "Digite o nome de um bairro para pesquisar.";
-    campoBuscaBairro.focus();
-    return;
-  }
-
-  const encontrados = vendedores.filter(vendedor =>
-    normalizarNomeBairro(vendedor.bairro).includes(pesquisa)
-  );
-
-  if (!encontrados.length) {
-    mensagemBuscaBairro.textContent =
-      "Ainda não encontramos vendedores nesse bairro.";
-    lista.innerHTML =
-      "<p>Nenhum vendedor encontrado para essa pesquisa.</p>";
-    return;
-  }
-
-  buscaPorProximidade = false;
-  localizacaoCliente = null;
-  bairroSelecionado = "Todos";
-
-  const botaoLimpar =
-    document.getElementById("botaoLimparProximidade");
-
-  if (botaoLimpar) botaoLimpar.hidden = true;
-
-  const mensagemProximidade =
-    document.getElementById("mensagemProximidade");
-
-  if (mensagemProximidade) {
-    mensagemProximidade.textContent = "";
-  }
-
-  mensagemBuscaBairro.textContent =
-    `${encontrados.length} vendedor(es) encontrado(s).`;
-
-  // Mantém a apresentação original dos produtos,
-  // preços, fotos, contatos e avaliações.
-  const vendedoresOriginais = vendedores;
-
-  try {
-    vendedores = encontrados;
-    renderizar();
-  } finally {
-    vendedores = vendedoresOriginais;
-  }
-}
-
-if (botaoBuscarBairro && campoBuscaBairro) {
-  botaoBuscarBairro.addEventListener(
-    "click",
-    pesquisarBairro
-  );
-
-  campoBuscaBairro.addEventListener(
-    "keydown",
-    evento => {
-      if (evento.key === "Enter") {
-        evento.preventDefault();
-        pesquisarBairro();
-      }
-    }
-  );
-}
-
-// Atualiza as sugestões quando o catálogo
-// terminar de carregar.
-const carregarVendedoresOriginal = carregarVendedores;
-
-carregarVendedores = async function () {
-  await carregarVendedoresOriginal();
-  atualizarBairrosDisponiveis();
-};
-
-
 function renderizar() {
-  let filtrados = vendedores.filter(
-    vendedor =>
+  let filtrados = vendedores.filter(vendedor => {
+    const bairro = normalizarBairro(vendedor.bairro);
+
+    const correspondeBairro =
       bairroSelecionado === "Todos" ||
-      vendedor.bairro === bairroSelecionado
-  );
+      bairro === normalizarBairro(bairroSelecionado);
+
+    const correspondePesquisa =
+      !pesquisaBairro ||
+      bairro.includes(pesquisaBairro);
+
+    return correspondeBairro && correspondePesquisa;
+  });
 
   if (buscaPorProximidade && localizacaoCliente) {
     filtrados = [...filtrados].sort((primeiro, segundo) => {
-      const distanciaPrimeiro = distanciaVendedor(primeiro);
-      const distanciaSegundo = distanciaVendedor(segundo);
+      const distanciaPrimeiro =
+        distanciaVendedor(primeiro);
+
+      const distanciaSegundo =
+        distanciaVendedor(segundo);
+
+      if (distanciaPrimeiro === null &&
+          distanciaSegundo === null) return 0;
 
       if (distanciaPrimeiro === null) return 1;
       if (distanciaSegundo === null) return -1;
@@ -695,7 +676,7 @@ function renderizar() {
 
   if (!filtrados.length) {
     lista.innerHTML =
-      "<p>Nenhum vendedor cadastrado neste bairro ainda.</p>";
+      "<p>Nenhum vendedor encontrado para esta pesquisa.</p>";
     return;
   }
 
@@ -729,6 +710,8 @@ function renderizar() {
     </article>
   `).join("");
 }
+
+/* CONSULTA AO SUPABASE */
 
 async function consultarTabela(tabela, parametros) {
   const resposta = await fetch(
@@ -801,6 +784,7 @@ async function carregarVendedores() {
 
     avaliacoes = dadosAvaliacoes;
 
+    atualizarSugestoesBairros();
     renderizar();
 
   } catch (erro) {
@@ -822,39 +806,55 @@ async function carregarVendedores() {
   }
 }
 
-/*
-  EVENTOS DA PAGINA
-*/
+/* EVENTOS DA PAGINA */
 
+// Botao para mostrar todos os vendedores.
 document.querySelectorAll("[data-bairro]").forEach(botao => {
   botao.addEventListener("click", () => {
     bairroSelecionado = botao.dataset.bairro;
+    pesquisaBairro = "";
 
-    if (buscaPorProximidade) {
-      buscaPorProximidade = false;
-      localizacaoCliente = null;
+    const campo =
+      document.getElementById("campoBuscaBairro");
 
-      const limpar = document.getElementById(
-        "botaoLimparProximidade"
-      );
+    const aviso =
+      document.getElementById("mensagemBuscaBairro");
 
-      const mensagem = document.getElementById(
-        "mensagemProximidade"
-      );
+    if (campo) campo.value = "";
+    if (aviso) aviso.textContent = "";
 
-      if (limpar) limpar.hidden = true;
-
-      if (mensagem) {
-        mensagem.textContent =
-          "Busca por bairro selecionada.";
-      }
-    }
-
+    limparProximidade();
     renderizar();
   });
 });
 
-// Atualiza o valor total e o pedido pelo WhatsApp.
+// Busca por bairro digitado.
+const botaoBuscarBairro =
+  document.getElementById("botaoBuscarBairro");
+
+const campoBuscaBairro =
+  document.getElementById("campoBuscaBairro");
+
+if (botaoBuscarBairro) {
+  botaoBuscarBairro.addEventListener(
+    "click",
+    buscarBairroDigitado
+  );
+}
+
+if (campoBuscaBairro) {
+  campoBuscaBairro.addEventListener(
+    "keydown",
+    evento => {
+      if (evento.key === "Enter") {
+        evento.preventDefault();
+        buscarBairroDigitado();
+      }
+    }
+  );
+}
+
+// Atualiza valor total e link do pedido.
 lista.addEventListener("input", evento => {
   const campo = evento.target.closest(
     "[data-quantidade-pedido]"
@@ -862,7 +862,9 @@ lista.addEventListener("input", evento => {
 
   if (!campo) return;
 
-  const produtoId = String(campo.dataset.quantidadePedido);
+  const produtoId = String(
+    campo.dataset.quantidadePedido
+  );
 
   const produto = produtos.find(
     item => String(item.id) === produtoId
@@ -885,8 +887,12 @@ lista.addEventListener("input", evento => {
     quantidade <= 99;
 
   const area = campo.closest("[data-pedido-produto]");
-  const total = area?.querySelector("[data-total-pedido]");
-  const link = area?.querySelector("[data-link-pedido]");
+
+  const total =
+    area?.querySelector("[data-total-pedido]");
+
+  const link =
+    area?.querySelector("[data-link-pedido]");
 
   if (!total || !link) return;
 
@@ -929,9 +935,11 @@ lista.addEventListener("input", evento => {
   link.removeAttribute("aria-disabled");
 });
 
-// Impede pedidos com quantidade invalida.
+// Impede pedido com quantidade invalida.
 lista.addEventListener("click", evento => {
-  const link = evento.target.closest("[data-link-pedido]");
+  const link = evento.target.closest(
+    "[data-link-pedido]"
+  );
 
   if (link && !link.hasAttribute("href")) {
     evento.preventDefault();
@@ -939,7 +947,7 @@ lista.addEventListener("click", evento => {
   }
 });
 
-// Avaliacoes sem cadastro.
+// Avaliacoes de produtos.
 lista.addEventListener("click", async evento => {
   const botao = evento.target.closest(
     "[data-avaliar-produto]"
