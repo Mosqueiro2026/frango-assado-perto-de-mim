@@ -237,6 +237,18 @@ pre {
 
     <hr>
 
+    <h2>✉️ Convidar vendedor cadastrado</h2>
+    <p>Use o código (ID) de um vendedor já cadastrado que tenha e-mail salvo. O convite será enviado somente quando você confirmar.</p>
+    <form id="formConvite">
+      <label for="idConvite">Código (ID) do vendedor</label>
+      <input id="idConvite" type="number" min="1" step="1" required placeholder="Ex.: 5">
+      <button id="enviarConvite" type="submit">Enviar convite ao vendedor</button>
+    </form>
+    <p id="mensagemConvite" role="status" aria-live="polite"></p>
+    <p class="aviso">O vendedor precisa ter um e-mail cadastrado. Não utilize este formulário para contas já vinculadas.</p>
+
+    <hr>
+
     <h2>📋 Histórico de alterações</h2>
     <p>
       Consulte os últimos 100 registros de vendedores
@@ -1151,6 +1163,60 @@ if (!window.supabase) {
       }
     }
   );
+
+  $("formConvite").addEventListener("submit", async evento => {
+    evento.preventDefault();
+    const aviso = $("mensagemConvite");
+    const botao = $("enviarConvite");
+    const id = Number($("idConvite").value);
+
+    if (!administradorAutorizado) {
+      aviso.textContent = "Acesso administrativo não autorizado.";
+      return;
+    }
+    if (!Number.isSafeInteger(id) || id <= 0) {
+      aviso.textContent = "Informe um código válido de vendedor.";
+      return;
+    }
+    if (!window.confirm(
+      `Confirma o envio de convite para o vendedor de código ${id}?`
+    )) return;
+
+    botao.disabled = true;
+    aviso.textContent = "Solicitando envio do convite...";
+    try {
+      const { data: usuario, error: erroUsuario } = await db.auth.getUser();
+      if (erroUsuario || !usuario.user ||
+          usuario.user.app_metadata?.role !== "admin") {
+        administradorAutorizado = false;
+        mostrar("login");
+        aviso.textContent = "Entre novamente como administrador.";
+        return;
+      }
+      const { data, error } = await db.functions.invoke(
+        "convidar-vendedor", { body: { vendedor_id: id } }
+      );
+      if (error) {
+        let detalhe = "";
+        try {
+          if (error.context && typeof error.context.json === "function") {
+            const resposta = await error.context.json();
+            detalhe = resposta?.mensagem || "";
+          }
+        } catch (_) {}
+        aviso.textContent = detalhe ||
+          "Não foi possível enviar o convite. Verifique a função no Supabase.";
+        return;
+      }
+      aviso.textContent = data?.mensagem || "Solicitação concluída.";
+      if (data?.vendedor_id) $("formConvite").reset();
+    } catch (erro) {
+      console.error("Falha no convite:", erro);
+      aviso.textContent = "Falha de conexão. Tente novamente mais tarde.";
+    } finally {
+      botao.disabled = false;
+    }
+  });
 
   botaoHistorico.addEventListener(
     "click",
