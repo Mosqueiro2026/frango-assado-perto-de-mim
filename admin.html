@@ -197,6 +197,12 @@ pre {
       <input id="nomeVendedor" type="text"
         maxlength="150" required>
 
+      <label for="emailVendedor">E-mail de acesso do vendedor (opcional)</label>
+      <input id="emailVendedor" type="email"
+        maxlength="254" autocomplete="off"
+        placeholder="vendedor@exemplo.com">
+      <p class="aviso">O e-mail será usado futuramente para vincular a conta do vendedor. Informá-lo não cria login nem senha.</p>
+
       <label for="bairroVendedor">Bairro</label>
       <input id="bairroVendedor" type="text"
         maxlength="150" required>
@@ -1015,6 +1021,9 @@ if (!window.supabase) {
       const nome =
         $("nomeVendedor").value.trim();
 
+      const emailVendedor =
+        $("emailVendedor").value.trim().toLowerCase();
+
       const bairro =
         $("bairroVendedor").value.trim();
 
@@ -1068,6 +1077,13 @@ if (!window.supabase) {
         return;
       }
 
+      if (emailVendedor &&
+          !$('emailVendedor').checkValidity()) {
+        mensagemCadastro.textContent =
+          "Informe um e-mail válido ou deixe o campo vazio.";
+        return;
+      }
+
       botaoSalvar.disabled = true;
 
       mensagemCadastro.textContent =
@@ -1100,7 +1116,8 @@ if (!window.supabase) {
             preco,
             endereco,
             whatsapp,
-            whatsapp2
+            whatsapp2,
+            email: emailVendedor || null
           });
 
         if (error) {
