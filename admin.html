@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -131,13 +130,21 @@ summary {
   color: #92400e;
   font-weight: bold;
 }
-pre {
-  white-space: pre-wrap;
+.detalhes-tabela {
+  width: 100%;
+  margin-top: 12px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+.detalhes-tabela th, .detalhes-tabela td {
+  padding: 8px;
+  border-bottom: 1px solid #e7e5e4;
+  text-align: left;
+  vertical-align: top;
   overflow-wrap: anywhere;
-  font-size: 12px;
+}
+.detalhes-tabela thead {
   background: #f5f5f4;
-  padding: 12px;
-  border-radius: 8px;
 }
 .aviso {
   font-size: 13px;
@@ -711,12 +718,6 @@ function criarRegistro(registro) {
     )
   );
 
-  /*
-    Exibe a tabela sem mostrar o UUID
-    comprido do usuário no cartão.
-    O identificador permanece disponível
-    em "Ver detalhes do registro".
-  */
   cartao.appendChild(
     elemento(
       "p",
@@ -752,9 +753,7 @@ function criarRegistro(registro) {
       elemento(
         "p",
         "subtitulo",
-        "Os campos modificados não puderam " +
-        "ser identificados automaticamente. " +
-        "Consulte os detalhes abaixo."
+        "Nenhuma mudança de campo foi identificada neste registro."
       )
     );
   }
@@ -770,15 +769,42 @@ function criarRegistro(registro) {
     )
   );
 
-  const pre = elemento("pre");
+  const idRegistro = buscarCampo(registro, ["id"]);
+  if (idRegistro !== null) {
+    detalhes.appendChild(elemento("p", "subtitulo", `Registro nº ${idRegistro}`));
+  }
 
-  pre.textContent = JSON.stringify(
-    registro,
-    null,
-    2
-  );
+  if (alteracoes.length) {
+    const tabela = elemento("table", "detalhes-tabela");
+    const cabecalho = tabela.createTHead().insertRow();
+    for (const titulo of ["Campo", "Antes", "Depois"]) {
+      const coluna = elemento("th", "", titulo);
+      coluna.scope = "col";
+      cabecalho.appendChild(coluna);
+    }
 
-  detalhes.appendChild(pre);
+    const corpo = tabela.createTBody();
+    for (const { campo, anterior, novo } of alteracoes) {
+      const linha = corpo.insertRow();
+      const rotulo = elemento("th", "", nomeCampo(campo));
+      rotulo.scope = "row";
+      linha.appendChild(rotulo);
+
+      const antesTexto = campo === "foto_url"
+        ? (anterior ? "Foto cadastrada" : "Sem foto")
+        : textoValor(anterior, campo);
+      const depoisTexto = campo === "foto_url"
+        ? (novo ? (anterior ? "Foto substituída" : "Foto adicionada") : "Sem foto")
+        : textoValor(novo, campo);
+      linha.append(
+        elemento("td", "", antesTexto),
+        elemento("td", "", depoisTexto)
+      );
+    }
+    detalhes.appendChild(tabela);
+  } else {
+    detalhes.appendChild(elemento("p", "subtitulo", "Sem campos para comparar."));
+  }
   cartao.appendChild(detalhes);
 
   return cartao;
