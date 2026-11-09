@@ -1,4 +1,3 @@
-```
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -171,26 +170,59 @@ function mostrarFotoAtual(url) {
 async function enviarFoto(produtoId, arquivo) {
   const erroFoto = validarFoto(arquivo);
   if (erroFoto) throw new Error(erroFoto);
-  // A pasta é o ID do produto, conforme as políticas de segurança do Storage.
-  const caminho = `${produtoId}/${crypto.randomUUID()}.${TIPOS_FOTO[arquivo.type]}`;
-  const envio = await db.storage.from(BUCKET_FOTOS).upload(caminho, arquivo, {
+
+  const vendedorId = vendedor.id;
+  const { data: produto, error: erroConsulta } = await db.from("produtos")
+    .select("foto_url")
+    .eq("id", produtoId)
+    .eq("vendedor_id", vendedorId)
+    .single();
+  if (erroConsulta) throw erroConsulta;
+
+  const fotos = db.storage.from(BUCKET_FOTOS);
+  const pasta = `${produtoId}/`;
+  const caminho = `${pasta}${crypto.randomUUID()}.${TIPOS_FOTO[arquivo.type]}`;
+  const { error: erroEnvio } = await fotos.upload(caminho, arquivo, {
     contentType: arquivo.type,
     upsert: false
   });
-  if (envio.error) throw envio.error;
+  if (erroEnvio) throw erroEnvio;
 
-  const { data: urlData } = db.storage.from(BUCKET_FOTOS).getPublicUrl(caminho);
-  const url = urlData.publicUrl;
-  const gravacao = await db.from("produtos")
+  const url = fotos.getPublicUrl(caminho).data.publicUrl;
+  const atualizacao = db.from("produtos")
     .update({ foto_url: url })
     .eq("id", produtoId)
-    .eq("vendedor_id", vendedor.id)
-    .select("id");
-  if (gravacao.error || !gravacao.data || !gravacao.data.length) {
-    // Evita deixar a nova imagem sem vínculo caso o banco rejeite a atualização.
-    await db.storage.from(BUCKET_FOTOS).remove([caminho]);
-    throw new Error(gravacao.error?.message || "Não foi possível associar a fotografia ao produto.");
+    .eq("vendedor_id", vendedorId);
+
+  // Evita substituir uma foto alterada por outra sessão.
+  if (produto.foto_url === null) {
+    atualizacao.is("foto_url", null);
+  } else {
+    atualizacao.eq("foto_url", produto.foto_url);
   }
+
+  const { data: gravacao, error: erroGravacao } = await atualizacao.select("id");
+  if (erroGravacao) throw erroGravacao;
+  if (!gravacao?.length) {
+    await fotos.remove([caminho]);
+    throw new Error("O produto mudou durante o envio. Reabra a edição e tente novamente.");
+  }
+
+  const prefixo = fotos.getPublicUrl(pasta).data.publicUrl;
+  if (produto.foto_url?.startsWith(prefixo)) {
+    const nomeAnterior = produto.foto_url.slice(prefixo.length);
+    if (/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.(jpg|png|webp)$/i.test(nomeAnterior)) {
+      try {
+        const { data: removidas, error } = await fotos.remove([`${pasta}${nomeAnterior}`]);
+        if (error || !removidas?.length) {
+          console.warn("A foto nova foi salva, mas a anterior não foi removida.", error);
+        }
+      } catch (erro) {
+        console.warn("A foto nova foi salva, mas a anterior não foi removida.", erro);
+      }
+    }
+  }
+
   return url;
 }
 
@@ -466,4 +498,3 @@ iniciar();
 </script>
 </body>
 </html>
-```
