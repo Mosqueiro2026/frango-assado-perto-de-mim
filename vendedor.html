@@ -74,6 +74,24 @@ button.secundario { background: #57534e; }
            autocomplete="current-password" required>
     <button id="entrar" type="submit">Entrar</button>
   </form>
+  <button id="pedirCodigo" type="button" class="secundario">Esqueci minha senha</button>
+</section>
+
+<section id="recuperacao" hidden>
+  <h3>Criar nova senha</h3>
+  <form id="formRecuperacao">
+    <label for="codigoRecuperacao">Código recebido por e-mail</label>
+    <input id="codigoRecuperacao" inputmode="numeric"
+           autocomplete="one-time-code" pattern="[0-9]+" required>
+    <label for="novaSenhaVendedor">Nova senha</label>
+    <input id="novaSenhaVendedor" type="password"
+           autocomplete="new-password" minlength="6" required>
+    <label for="confirmarSenhaVendedor">Repita a nova senha</label>
+    <input id="confirmarSenhaVendedor" type="password"
+           autocomplete="new-password" minlength="6" required>
+    <button id="salvarSenhaVendedor" type="submit">Salvar nova senha</button>
+  </form>
+  <button id="voltarLogin" type="button" class="secundario">Voltar ao login</button>
 </section>
 
 <section id="painel" hidden>
@@ -130,10 +148,17 @@ button.secundario { background: #57534e; }
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-const db = window.supabase.createClient(
-  "https://mublqamdknlkrhtzzwfj.supabase.co",
-  "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85"
-);
+const SUPABASE_URL = "https://mublqamdknlkrhtzzwfj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_zCQTgOMfeHlIkuaiZ5CW0g_pCku9j85";
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const authRecuperacao = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: false,
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    storageKey: "frango-recuperacao-vendedor"
+  }
+}).auth;
 
 const $ = id => document.getElementById(id);
 let vendedor = null;
@@ -430,6 +455,90 @@ async function excluirProduto(id) {
   await carregarProdutos();
   avisar("Produto excluído.");
 }
+let emailRecuperacao = "";
+let codigoVerificado = false;
+
+$("pedirCodigo").addEventListener("click", async () => {
+  const email = $("email");
+  if (!email.reportValidity()) return;
+
+  $("pedirCodigo").disabled = true;
+  $("entrar").disabled = true;
+  try {
+    emailRecuperacao = email.value.trim();
+    const redirectTo = new URL("vendedor.html", window.location.href).href;
+    const { error } = await authRecuperacao.resetPasswordForEmail(
+      emailRecuperacao, { redirectTo }
+    );
+    if (error) throw error;
+
+    $("senha").value = "";
+    $("login").hidden = true;
+    $("recuperacao").hidden = false;
+    $("codigoRecuperacao").focus();
+    avisar("Se o e-mail estiver cadastrado, você receberá um código.");
+  } catch {
+    avisar("Não foi possível solicitar o código. Aguarde um pouco e tente novamente.");
+  } finally {
+    $("pedirCodigo").disabled = false;
+    $("entrar").disabled = false;
+  }
+});
+
+async function fecharRecuperacao(mensagem) {
+  if (codigoVerificado) await authRecuperacao.signOut({ scope: "local" });
+  codigoVerificado = false;
+  emailRecuperacao = "";
+  $("formRecuperacao").reset();
+  $("codigoRecuperacao").disabled = false;
+  $("recuperacao").hidden = true;
+  mostrarLogin(mensagem);
+}
+
+$("voltarLogin").addEventListener("click", async () => {
+  await fecharRecuperacao("Entre com seu e-mail e senha.");
+});
+
+$("formRecuperacao").addEventListener("submit", async evento => {
+  evento.preventDefault();
+  const senha = $("novaSenhaVendedor").value;
+  if (senha !== $("confirmarSenhaVendedor").value) {
+    avisar("As duas senhas precisam ser iguais.");
+    return;
+  }
+
+  $("salvarSenhaVendedor").disabled = true;
+  $("voltarLogin").disabled = true;
+  try {
+    if (!codigoVerificado) {
+      const { error } = await authRecuperacao.verifyOtp({
+        email: emailRecuperacao,
+        token: $("codigoRecuperacao").value.trim(),
+        type: "recovery"
+      });
+      if (error) {
+        avisar("Não foi possível validar o código. Confira o e-mail mais recente.");
+        return;
+      }
+      codigoVerificado = true;
+      $("codigoRecuperacao").value = "";
+      $("codigoRecuperacao").disabled = true;
+    }
+
+    const { error } = await authRecuperacao.updateUser({ password: senha });
+    if (error) {
+      avisar("Não foi possível salvar a senha: " + error.message);
+      return;
+    }
+    await fecharRecuperacao("Senha atualizada. Entre com a nova senha.");
+  } catch {
+    avisar("Não foi possível concluir a recuperação. Tente novamente.");
+  } finally {
+    $("salvarSenhaVendedor").disabled = false;
+    $("voltarLogin").disabled = false;
+  }
+});
+
 $("formLogin").addEventListener("submit", async e => {
   e.preventDefault();
   $("entrar").disabled = true;
