@@ -368,14 +368,62 @@ async function excluirProduto(id) {
   if (!vendedor) return;
   if (!confirm("Deseja realmente excluir este produto?")) return;
 
-  const { data, error } = await db.from("produtos")
+  const vendedorId = vendedor.id;
+  const { data: produto, error: erroConsulta } = await db.from("produtos")
+    .select("foto_url")
+    .eq("id", id)
+    .eq("vendedor_id", vendedorId)
+    .single();
+  if (erroConsulta) {
+    avisar("Não foi possível localizar o produto para exclusão.");
+    return;
+  }
+
+  const fotos = db.storage.from(BUCKET_FOTOS);
+  const pasta = `${id}/`;
+  const prefixo = fotos.getPublicUrl(pasta).data.publicUrl;
+  const nome = produto.foto_url?.startsWith(prefixo)
+    ? produto.foto_url.slice(prefixo.length)
+    : "";
+  let fotoRemovida = false;
+  if (/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}\.(jpg|png|webp)$/i.test(nome)) {
+    try {
+      const { data: removidas, error: erroFoto } = await fotos.remove([`${pasta}${nome}`]);
+      if (erroFoto) throw erroFoto;
+      fotoRemovida = Boolean(removidas?.length);
+    } catch (erro) {
+      console.error("Falha ao remover a foto do produto:", erro);
+      avisar("Não foi possível remover a foto. O produto ainda está cadastrado.");
+      return;
+    }
+  }
+
+  const exclusao = db.from("produtos")
     .delete()
     .eq("id", id)
-    .eq("vendedor_id", vendedor.id)
-    .select("id");
+    .eq("vendedor_id", vendedorId);
+  if (produto.foto_url === null) {
+    exclusao.is("foto_url", null);
+  } else {
+    exclusao.eq("foto_url", produto.foto_url);
+  }
 
-  if (error || !data || !data.length) {
-    avisar("Não foi possível excluir o produto.");
+  const { data, error } = await exclusao.select("id");
+  if (error || !data?.length) {
+    if (fotoRemovida) {
+      // Limpa o endereço removido, preservando uma foto salva em outra sessão.
+      const { error: erroLimpeza } = await db.from("produtos")
+        .update({ foto_url: null })
+        .eq("id", id)
+        .eq("vendedor_id", vendedorId)
+        .eq("foto_url", produto.foto_url);
+      if (erroLimpeza) console.warn("Falha ao limpar o endereço da foto.", erroLimpeza);
+    }
+    limparProduto();
+    await carregarProdutos();
+    avisar(fotoRemovida
+      ? "A foto foi removida, mas a exclusão do produto não foi confirmada."
+      : "Não foi possível excluir o produto. Atualize a lista e tente novamente.");
     return;
   }
   limparProduto();
