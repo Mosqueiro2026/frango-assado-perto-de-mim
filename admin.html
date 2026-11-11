@@ -280,11 +280,16 @@ summary {
         <label for="editarWhatsapp2">WhatsApp 2 (opcional)</label>
         <input id="editarWhatsapp2" type="tel">
         <button type="submit">Salvar alterações</button>
+        <button id="localizarVendedorEdicao" type="button">Localizar pelo endereço</button>
+        <p class="aviso">Se você mudou o endereço, salve as alterações antes de buscar a localização.</p>
         <button id="cancelarEdicao" type="button">Cancelar</button>
       </fieldset>
     </form>
 
     <hr>
+
+    <p class="aviso">Busca de endereços por <a href="https://www.geoapify.com/">Geoapify</a>
+      e dados de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>.</p>
 
     <h2>✉️ Convidar vendedor cadastrado</h2>
     <p>Use o código (ID) de um vendedor já cadastrado que tenha e-mail salvo. O convite será enviado somente quando você confirmar.</p>
@@ -1123,6 +1128,75 @@ if (!window.supabase) {
     }
   );
 
+  async function buscarLocalizacaoVendedor(endereco, bairro, mensagem) {
+    mensagem.textContent = "Buscando a localização do endereço...";
+    const { data, error } = await db.functions.invoke("localizar-endereco", {
+      body: { endereco, bairro }
+    });
+    if (error || !Array.isArray(data?.locais)) {
+      throw new Error("Não foi possível consultar o serviço de mapas.");
+    }
+
+    const local = data.locais.find(item =>
+      item.tipo === "building" &&
+      typeof item.endereco === "string" &&
+      /s[aã]o jos[eé] dos campos/i.test(item.endereco) &&
+      Number.isFinite(item.latitude) && Math.abs(item.latitude) <= 90 &&
+      Number.isFinite(item.longitude) && Math.abs(item.longitude) <= 180
+    );
+    if (!local) {
+      mensagem.textContent = "O mapa não encontrou um endereço com número em São José dos Campos.";
+      return null;
+    }
+
+    return window.confirm(
+      "Confira a rua e o número encontrados no mapa:\n\n" +
+      local.endereco + "\n\nSalvar esta localização?"
+    ) ? local : null;
+  }
+
+  $("localizarVendedorEdicao").addEventListener("click", async () => {
+    if (!administradorAutorizado || !vendedorEmEdicao) return;
+    const original = vendedorEmEdicao;
+    const mensagem = $("mensagemEdicao");
+    if (!original.endereco ||
+        $("editarEndereco").value.trim() !== String(original.endereco).trim() ||
+        $("editarBairro").value.trim() !== String(original.bairro ?? "").trim()) {
+      mensagem.textContent = "Salve o endereço e o bairro antes de localizar o vendedor.";
+      return;
+    }
+
+    const consulta = consultaVendedoresAtual;
+    const controles = ["camposEdicao", "listarVendedores", "abrirEdicao"];
+    controles.forEach(id => { $(id).disabled = true; });
+    try {
+      const local = await buscarLocalizacaoVendedor(original.endereco, original.bairro, mensagem);
+      if (consulta !== consultaVendedoresAtual || vendedorEmEdicao !== original) return;
+      if (!local) {
+        mensagem.textContent += " Nenhuma coordenada foi alterada.";
+        return;
+      }
+      const { data, error } = await db.rpc("salvar_localizacao_vendedor", {
+        p_id: original.id,
+        p_endereco: original.endereco,
+        p_bairro: original.bairro,
+        p_latitude: local.latitude,
+        p_longitude: local.longitude
+      });
+      if (consulta !== consultaVendedoresAtual) return;
+      if (error) throw error;
+      mensagem.textContent = data === true
+        ? "Localização atualizada."
+        : "O cadastro mudou. Consulte a lista novamente e confira o endereço.";
+    } catch {
+      if (consulta === consultaVendedoresAtual) {
+        mensagem.textContent = "Não foi possível confirmar a localização. Confira o endereço e tente novamente.";
+      }
+    } finally {
+      controles.forEach(id => { $(id).disabled = false; });
+    }
+  });
+
   $("formVendedor").addEventListener(
     "submit",
     async evento => {
@@ -1226,6 +1300,19 @@ if (!window.supabase) {
           return;
         }
 
+        let local = null;
+        try {
+          local = await buscarLocalizacaoVendedor(endereco, bairro, mensagemCadastro);
+        } catch {
+          mensagemCadastro.textContent = "O serviço de mapas está indisponível.";
+        }
+        if (!local && !window.confirm(
+          "A localização não foi confirmada. Salvar o vendedor sem coordenadas?"
+        )) {
+          mensagemCadastro.textContent = "Cadastro ainda não salvo. Confira o endereço e tente novamente.";
+          return;
+        }
+
         const { error } =
           await db.from("vendedores").insert({
             nome,
@@ -1234,7 +1321,8 @@ if (!window.supabase) {
             endereco,
             whatsapp,
             whatsapp2,
-            email: emailVendedor || null
+            email: emailVendedor || null,
+            ...(local ? { latitude: local.latitude, longitude: local.longitude } : {})
           });
 
         if (error) {
@@ -1253,7 +1341,8 @@ if (!window.supabase) {
         $("formVendedor").reset();
 
         mensagemCadastro.textContent =
-          "Vendedor cadastrado com sucesso!";
+          local ? "Vendedor cadastrado com localização."
+            : "Vendedor cadastrado. Localização pendente.";
       } catch (erro) {
         console.error(
           "Falha de conexão:",
