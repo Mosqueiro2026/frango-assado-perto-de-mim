@@ -269,6 +269,9 @@ summary {
       <fieldset id="camposEdicao">
         <label for="editarNome">Nome do vendedor</label>
         <input id="editarNome" maxlength="150" required>
+        <label for="editarEmail">E-mail de acesso do vendedor (opcional)</label>
+        <input id="editarEmail" type="email" maxlength="254" autocomplete="off">
+        <p class="aviso">Este campo atualiza o e-mail do cadastro. O login de uma conta já vinculada é gerenciado separadamente.</p>
         <label for="editarBairro">Bairro</label>
         <input id="editarBairro" maxlength="150" required>
         <label for="editarEndereco">Endereço</label>
@@ -379,6 +382,7 @@ function mostrar(secao) {
 
 const camposVendedorEditavel = {
   nome: "editarNome",
+  email: "editarEmail",
   bairro: "editarBairro",
   endereco: "editarEndereco",
   preco: "editarPreco",
@@ -1325,6 +1329,8 @@ if (!window.supabase) {
           mensagem.textContent = "Informe um WhatsApp válido com DDD.";
           return;
         }
+      } else if (campo === "email") {
+        alteracoes.email = valor.toLowerCase() || null;
       } else if (campo === "preco") {
         if (!valor || !Number.isFinite(Number(valor)) || Number(valor) <= 0) {
           mensagem.textContent = "Informe um preço maior que zero.";
