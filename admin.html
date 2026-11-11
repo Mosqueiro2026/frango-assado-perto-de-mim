@@ -130,6 +130,18 @@ summary {
   color: #92400e;
   font-weight: bold;
 }
+#vendedorSelecionado {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0 10px;
+  font: inherit;
+}
+#camposEdicao {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
 .detalhes-tabela {
   width: 100%;
   margin-top: 12px;
@@ -244,6 +256,36 @@ summary {
 
     <hr>
 
+    <h2>Vendedores cadastrados</h2>
+    <button id="listarVendedores" type="button">Consultar vendedores</button>
+    <p id="mensagemEdicao" role="status" aria-live="polite"></p>
+    <div id="listaVendedores" hidden>
+      <label for="vendedorSelecionado">Selecione o vendedor</label>
+      <select id="vendedorSelecionado"></select>
+      <button id="abrirEdicao" type="button">Editar cadastro</button>
+    </div>
+    <form id="formEditarVendedor" hidden>
+      <h3 id="tituloEdicao"></h3>
+      <fieldset id="camposEdicao">
+        <label for="editarNome">Nome do vendedor</label>
+        <input id="editarNome" maxlength="150" required>
+        <label for="editarBairro">Bairro</label>
+        <input id="editarBairro" maxlength="150" required>
+        <label for="editarEndereco">Endereço</label>
+        <input id="editarEndereco" required>
+        <label for="editarPreco">Preço (R$)</label>
+        <input id="editarPreco" type="number" min="0.01" step="0.01">
+        <label for="editarWhatsapp">WhatsApp 1</label>
+        <input id="editarWhatsapp" type="tel" required>
+        <label for="editarWhatsapp2">WhatsApp 2 (opcional)</label>
+        <input id="editarWhatsapp2" type="tel">
+        <button type="submit">Salvar alterações</button>
+        <button id="cancelarEdicao" type="button">Cancelar</button>
+      </fieldset>
+    </form>
+
+    <hr>
+
     <h2>✉️ Convidar vendedor cadastrado</h2>
     <p>Use o código (ID) de um vendedor já cadastrado que tenha e-mail salvo. O convite será enviado somente quando você confirmar.</p>
     <form id="formConvite">
@@ -331,7 +373,44 @@ function mostrar(secao) {
   if (secao !== "painel") {
     administradorAutorizado = false;
     limparHistorico();
+    limparEdicaoVendedores();
   }
+}
+
+const camposVendedorEditavel = {
+  nome: "editarNome",
+  bairro: "editarBairro",
+  endereco: "editarEndereco",
+  preco: "editarPreco",
+  whatsapp: "editarWhatsapp",
+  whatsapp2: "editarWhatsapp2"
+};
+const colunasVendedorEditavel = "id," + Object.keys(camposVendedorEditavel).join(",");
+let vendedoresParaEdicao = [];
+let vendedorEmEdicao = null;
+let consultaVendedoresAtual = 0;
+
+function limparEdicaoVendedores() {
+  ++consultaVendedoresAtual;
+  vendedoresParaEdicao = [];
+  vendedorEmEdicao = null;
+  $("vendedorSelecionado").replaceChildren();
+  $("listaVendedores").hidden = true;
+  $("formEditarVendedor").reset();
+  $("formEditarVendedor").hidden = true;
+  $("mensagemEdicao").textContent = "";
+}
+
+function mostrarOpcoesVendedores(idSelecionado) {
+  const seletor = $("vendedorSelecionado");
+  seletor.replaceChildren(...vendedoresParaEdicao.map(vendedor =>
+    new Option(
+      `${vendedor.nome} — ${vendedor.bairro} (ID ${vendedor.id})`,
+      String(vendedor.id)
+    )
+  ));
+  if (idSelecionado != null) seletor.value = String(idSelecionado);
+  $("listaVendedores").hidden = vendedoresParaEdicao.length === 0;
 }
 
 function normalizarTelefone(valor) {
@@ -1189,6 +1268,130 @@ if (!window.supabase) {
       }
     }
   );
+
+  $("listarVendedores").addEventListener("click", async () => {
+    if (!administradorAutorizado) return;
+    limparEdicaoVendedores();
+    const consulta = consultaVendedoresAtual;
+    const mensagem = $("mensagemEdicao");
+    mensagem.textContent = "Consultando vendedores...";
+    try {
+      const { data, error } = await db.from("vendedores")
+        .select(colunasVendedorEditavel).order("nome");
+      if (consulta !== consultaVendedoresAtual) return;
+      if (error) throw error;
+      vendedoresParaEdicao = data;
+      mostrarOpcoesVendedores();
+      mensagem.textContent = data.length ? "" : "Nenhum vendedor encontrado.";
+    } catch {
+      if (consulta === consultaVendedoresAtual) {
+        mensagem.textContent = "Não foi possível consultar os vendedores.";
+      }
+    }
+  });
+
+  $("abrirEdicao").addEventListener("click", () => {
+    if (!administradorAutorizado) return;
+    const id = $("vendedorSelecionado").value;
+    vendedorEmEdicao = vendedoresParaEdicao.find(vendedor => String(vendedor.id) === id);
+    if (!vendedorEmEdicao) return;
+    for (const [campo, controle] of Object.entries(camposVendedorEditavel)) {
+      $(controle).value = vendedorEmEdicao[campo] ?? "";
+    }
+    $("tituloEdicao").textContent = `Editar ${vendedorEmEdicao.nome}`;
+    $("mensagemEdicao").textContent = "";
+    $("formEditarVendedor").hidden = false;
+    $("editarNome").focus();
+  });
+
+  $("cancelarEdicao").addEventListener("click", () => {
+    vendedorEmEdicao = null;
+    $("formEditarVendedor").hidden = true;
+    $("mensagemEdicao").textContent = "";
+  });
+
+  $("formEditarVendedor").addEventListener("submit", async evento => {
+    evento.preventDefault();
+    if (!administradorAutorizado || !vendedorEmEdicao) return;
+    const original = vendedorEmEdicao;
+    const mensagem = $("mensagemEdicao");
+    const alteracoes = {};
+    for (const [campo, controle] of Object.entries(camposVendedorEditavel)) {
+      const valor = $(controle).value.trim();
+      if (valor === String(original[campo] ?? "")) continue;
+      if (campo.startsWith("whatsapp")) {
+        alteracoes[campo] = valor ? normalizarTelefone(valor) : null;
+        if (valor && !alteracoes[campo]) {
+          mensagem.textContent = "Informe um WhatsApp válido com DDD.";
+          return;
+        }
+      } else if (campo === "preco") {
+        if (!valor || !Number.isFinite(Number(valor)) || Number(valor) <= 0) {
+          mensagem.textContent = "Informe um preço maior que zero.";
+          return;
+        }
+        alteracoes[campo] = Number(valor);
+      } else {
+        if (!valor) {
+          mensagem.textContent = "Preencha nome, bairro e endereço.";
+          return;
+        }
+        alteracoes[campo] = valor;
+      }
+    }
+    const campos = Object.keys(alteracoes);
+    if (!campos.length) {
+      mensagem.textContent = "Nenhuma alteração para salvar.";
+      return;
+    }
+    const dados = { ...original, ...alteracoes };
+    if ((campos.includes("whatsapp") || campos.includes("whatsapp2")) &&
+        (!dados.whatsapp || normalizarTelefone(String(dados.whatsapp)) ===
+          normalizarTelefone(String(dados.whatsapp2 ?? "")))) {
+      mensagem.textContent = "Informe o primeiro WhatsApp e use números diferentes.";
+      return;
+    }
+
+    const consulta = consultaVendedoresAtual;
+    const controles = ["camposEdicao", "listarVendedores", "abrirEdicao"];
+    controles.forEach(id => { $(id).disabled = true; });
+    mensagem.textContent = "Salvando alterações...";
+    try {
+      const { data, error } = await db.auth.getUser();
+      if (consulta !== consultaVendedoresAtual) return;
+      if (error || data.user?.app_metadata?.role !== "admin") {
+        mostrar("login");
+        avisar("Entre novamente como administrador.");
+        return;
+      }
+      let pedido = db.from("vendedores").update(alteracoes).eq("id", original.id);
+      for (const campo of campos) {
+        pedido = original[campo] == null
+          ? pedido.is(campo, null)
+          : pedido.eq(campo, original[campo]);
+      }
+      const resultado = await pedido.select(colunasVendedorEditavel).maybeSingle();
+      if (consulta !== consultaVendedoresAtual) return;
+      if (resultado.error) throw resultado.error;
+      if (!resultado.data) {
+        mensagem.textContent = "Alteração não confirmada. Consulte a lista novamente para conferir o cadastro e as permissões.";
+        return;
+      }
+      vendedoresParaEdicao = vendedoresParaEdicao.map(vendedor =>
+        vendedor.id === original.id ? resultado.data : vendedor
+      );
+      mostrarOpcoesVendedores(original.id);
+      vendedorEmEdicao = null;
+      $("formEditarVendedor").hidden = true;
+      mensagem.textContent = "Cadastro atualizado.";
+    } catch {
+      if (consulta === consultaVendedoresAtual) {
+        mensagem.textContent = "Não foi possível confirmar a atualização. Consulte o cadastro antes de tentar novamente.";
+      }
+    } finally {
+      controles.forEach(id => { $(id).disabled = false; });
+    }
+  });
 
   $("formConvite").addEventListener("submit", async evento => {
     evento.preventDefault();
